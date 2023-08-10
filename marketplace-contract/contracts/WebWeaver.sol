@@ -25,6 +25,7 @@ enum Mode {
 
 struct Product {
     uint productID;
+    bytes32 ProductHASH;
     uint storeID;
     uint price;
     uint inStock;
@@ -41,7 +42,7 @@ contract WebWeaver is Ownable, Transferable {
 
     Product[] public catalog;
     mapping(address => uint[]) public mappedCatalogs;  // catalog[mappedCatalogs[storeAddress][X]]
-
+     
     constructor() Ownable() payable {
         moderators.push(Moderator({
             moderatorAddress: msg.sender
@@ -95,8 +96,10 @@ contract WebWeaver is Ownable, Transferable {
         stores[0].stake -= amount;
         _internalTransferFunds(amount, msg.sender);
     }
-
+    //Yo
     function registerProduct(uint price, uint stock, Mode[] calldata modes) public {
+        //push line 42 and push to 42
+        //compare bytes32
         
     }
 
@@ -105,7 +108,7 @@ contract WebWeaver is Ownable, Transferable {
         Store storage store = stores[storeIndexes[msg.sender]];
         //Delete modes and turn them on one by one
     }
-
+    //Yo
     function automaticEscrowPurchase() public payable {
         //high return fee
     }
