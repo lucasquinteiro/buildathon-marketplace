@@ -14,7 +14,7 @@ struct Store {
     uint storeID;
     address owner;
     uint stake;
-    //reputation?
+    uint reputation;
 }
 
 
@@ -48,7 +48,8 @@ contract WebWeaver is Ownable, Transferable {
         stores.push(Store({
             storeID: stores.length - 1,
             owner: msg.sender,
-            stake: msg.value
+            stake: msg.value,
+            reputation:0
         }));
         storeIndexes[msg.sender] = stores.length - 1;
     }
@@ -58,7 +59,8 @@ contract WebWeaver is Ownable, Transferable {
         stores.push(Store({
             storeID: stores.length - 1,
             owner: storeOwner,
-            stake: 0
+            stake: 0,
+            reputation:0
         }));
         storeIndexes[storeOwner] = stores.length - 1;
         return stores.length - 1;
@@ -133,4 +135,14 @@ contract WebWeaver is Ownable, Transferable {
         //minimum return fee
     }
 
-}
+//Call reputation after confirmation
+function _reputation(bool positive ,uint _opinion) private {
+    require(_opinion <= 5, "The reputation score cannot be higher than 5");
+    require(_opinion >= 1, "The reputation score cannot be lower than 1");
+    if(positive){
+        stores[storeIndexes[msg.sender]].reputation += _opinion;
+    }
+    else{
+        stores[storeIndexes[msg.sender]].reputation -= _opinion;
+    }
+}}
