@@ -7,15 +7,28 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Product from "@/types/Product";
+import classNames from "classnames";
 import Image from "next/image";
 import Link from "next/link";
 
-interface Props extends Product {}
+interface Props extends Product {
+  className?: string;
+}
 
-const ProductCard: React.FC<Props> = ({ name, description, price }) => {
+const ProductCard: React.FC<Props> = ({
+  name,
+  description,
+  price,
+  className,
+}) => {
   return (
     <Link href="/product">
-      <Card className="cursor-pointer w-60 hover:opacity-80">
+      <Card
+        className={classNames("cursor-pointer w-60 hover:opacity-80", {
+          [String(className)]: !!className,
+          "w-full": true,
+        })}
+      >
         <div className="p-4 bg-green-300">
           <div className="relative w-full h-20">
             <Image
