@@ -24,6 +24,7 @@ enum Modes {
 
 struct Product {
     uint productID;
+    string name;
     bytes32 productHash;
     uint storeID;
     uint price;
@@ -142,7 +143,7 @@ contract WebWeaver is Ownable, Transferable {
         stores[storeIndexes[newAddress]].owner = newAddress;
     }
 
-    function registerProduct(uint _price, uint _stock, bool _moderatedPurchase) public {
+    function registerProduct(uint _price, uint _stock, bool _moderatedPurchase, string memory _name) public {
         require(storeIndexes[msg.sender] != 0, "This address does not have a store to its name");  // TODO also receive hash to check its not present
         //push line 42 and push to 42
         //compare bytes32
@@ -150,6 +151,7 @@ contract WebWeaver is Ownable, Transferable {
         bytes32 newproductHash = productHash(_productId, storeIndexes[msg.sender]);
         Product memory newProduct = Product({
             productID: _productId,
+            name: _name,
             productHash: newproductHash,
             storeID: storeIndexes[msg.sender],
             price: _price,
@@ -298,10 +300,14 @@ contract WebWeaver is Ownable, Transferable {
         }
     }
 
-    function _getClient(address clientAddress) private returns (Client storage) {
+    function _getClient(address clientAddress) view private returns (Client storage) {
         if (clientIndexes[clientAddress] == 0 && clientAddress != owner()) {
             // TODO register client
         }
         return clients[clientIndexes[clientAddress]];
+    }
+
+    function getCatalog() public view returns (Product[] memory) {
+        return catalog;
     }
 }
