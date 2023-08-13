@@ -12,6 +12,11 @@ struct Moderator {
 
 struct Store {
     uint64 storeID;
+
+    string imagePath;
+    string bannerPath;
+    string name;
+
     address owner;
     uint16 reputation;  // TODO revisar concepto
 }
@@ -24,7 +29,11 @@ enum Flows {
 
 struct Product {
     uint128 productID;
+
     string name;
+    string imagePath;
+    string description;
+
     bytes32 productHash;
     uint64 storeID;
     uint256 price;  // TODO Ver moneda y unidades
@@ -63,13 +72,6 @@ struct Purchase {
     uint256 lastUpdatedTimestamp;
 }
 
-struct PurchaseReferences {
-    mapping(uint64 => uint256[]) mappedClientConcretedPurchases;
-    mapping(uint64 => uint256[]) mappedStoreConcretedPurchases;
-    mapping(uint64 => uint256[]) mappedClientOngoingPurchases;
-    mapping(uint64 => uint256[]) mappedStoreOngoingPurchases;
-    uint256 totalOngoingPurchases;
-}
 
 contract WebWeaver is Ownable, Transferable {
 
@@ -92,7 +94,8 @@ contract WebWeaver is Ownable, Transferable {
     mapping(address => uint128[]) public mappedCatalogs;  // catalog[mappedCatalogs[storeAddress][X]] TODO cambiar a mapping (uint256 storeID => uint[] productIDs)
     
     Purchase[] public purchases;  // TODO research: generate purchase ID by = hash(client, product, clientNonce)
-    PurchaseReferences public purchaseReferences;
+    mapping(uint64 => uint256[]) mappedClientPurchases;
+    mapping(uint64 => uint256[]) mappedStorePurchases;
 
     event PurchaseSent(uint64 storeID, Flows purchaseFlow, uint256 purchaseID, uint128 productID, bytes32 productHash, uint256 price);
     
@@ -115,19 +118,42 @@ contract WebWeaver is Ownable, Transferable {
         
         stores.push(Store({
             storeID: 0,
+            imagePath: "",
+            bannerPath: "",
+            name: "DefaultShop",
             owner: msg.sender,
             reputation: 0
         }));
         storeIndexes[msg.sender] = 0;
     }
 
+    // Public Views
+
+    function getCatalog() public view returns (Product[] memory) {  // TODO limit output size
+        return catalog;
+    }
+
+    function getClientPurchases(address clientAddress) public view returns (Purchase[] memory) {  // TODO limit output size
+        uint256[] storage clientPurchasesIndexes = mappedClientPurchases[clientIndexes[clientAddress]];
+        Purchase[] memory clientPurchases = new Purchase[](clientPurchasesIndexes.length);
+        for (uint i = 0; i < clientPurchasesIndexes.length; i++) {
+            clientPurchases[i] = purchases[clientPurchasesIndexes[i]];
+        }
+        return clientPurchases;
+    }
+
     // Public Interaction Functions
 
-    function registerStore(address storeOwner) public onlyOwner returns (uint64 storeID) {
+    function registerStore(address storeOwner, string calldata _storeName, string calldata _imagePath, string calldata _bannerPath) public onlyOwner returns (uint64 storeID) {
         require(storeIndexes[storeOwner] == 0, "This address already has a store to its name");
         storeID = uint64(stores.length);
         stores.push(Store({
             storeID: storeID,
+
+            imagePath: _imagePath,
+            bannerPath: _bannerPath,
+            name: _storeName,
+
             owner: storeOwner,
             reputation: 0
         }));
@@ -143,7 +169,7 @@ contract WebWeaver is Ownable, Transferable {
         stores[storeIndexes[newAddress]].owner = newAddress;
     }
 
-    function registerProduct(uint256 _price, string calldata _name, uint32 _stock, Flows[] memory _supportedFlows) public {
+    function registerProduct(uint256 _price, string calldata _name, string calldata _imagePath, string calldata _description, uint32 _stock, Flows[] memory _supportedFlows) public {
         require(storeIndexes[msg.sender] != 0, "This address does not have a store to its name");  // TODO also receive hash to check its not present
         //push line 42 and push to 42
         //compare bytes32
@@ -151,7 +177,11 @@ contract WebWeaver is Ownable, Transferable {
         bytes32 newproductHash = productHash(_productId, storeIndexes[msg.sender]);
         Product memory newProduct = Product({
             productID: _productId,
+            
             name: _name,
+            imagePath: _imagePath,
+            description: _description,
+
             productHash: newproductHash,
             storeID: storeIndexes[msg.sender],
             price: _price,
@@ -202,8 +232,8 @@ contract WebWeaver is Ownable, Transferable {
         });
         
         purchases.push(purchase);
-        purchaseReferences.mappedClientOngoingPurchases[client.clientID].push(purchaseID);
-        purchaseReferences.mappedStoreOngoingPurchases[product.storeID].push(purchaseID);
+        mappedClientPurchases[client.clientID].push(purchaseID);
+        mappedStorePurchases[product.storeID].push(purchaseID);
         emit PurchaseSent(product.storeID, purchase.flow, purchase.purchaseID, product.productID, product.productHash, product.price);
     }
 
@@ -285,7 +315,4 @@ contract WebWeaver is Ownable, Transferable {
         return clients[clientIndexes[clientAddress]];
     }
 
-    function getCatalog() public view returns (Product[] memory) {
-        return catalog;
-    }
 }
