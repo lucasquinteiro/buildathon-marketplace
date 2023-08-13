@@ -49,7 +49,8 @@ enum PurchaseState {
     F_AUTOMATIC_ESCROW_RECEIVED,
     F_AUTOMATIC_ESCROW_CANCELED,
     F_AUTOMATIC_ESCROW_REJECTED,
-
+    // TODO unify a lot of these and unify flow functions, and for specifics, check the purchase mode
+    // TODO also unify events, and add mode to event info, and also change mode for flow?
     A_MODERATED_ESCROW_SENT,
     A_MODERATED_ESCROW_CONFIRMED,
     A_MODERATED_ESCROW_APPEAL_REQUEST,
@@ -69,7 +70,6 @@ struct Purchase {
     uint clientInsurance;
     uint storeInsurance;
     PurchaseState state;
-    bool closed;  // TODO is this redundant???
 }
 
 
@@ -77,7 +77,7 @@ contract WebWeaver is Ownable, Transferable {
 
     // TODO add store banning logic
 
-    uint8 public ESCROW_PURCHASE_STAKE_PERCENTAGE = 30;
+    uint8 public ESCROW_PURCHASE_STAKE_PERCENTAGE = 30;  // TODO ver que esto sea seteable per product
 
     Moderator[] public moderators;
     mapping(address => uint) public moderatorIndexes;
@@ -99,8 +99,12 @@ contract WebWeaver is Ownable, Transferable {
     mapping(uint => uint[]) public mappedStoreOngoingPurchases;  // TODO aggregate these 4 mappings into one collective static struct?
 
     event DirectPurchaseSent(uint storeID, uint purchaseID, uint productID, bytes32 productHash, uint price);
-    event DirectPurchaseReceive(uint clientID, uint storeID, uint productID, uint purchaseID);
-    event DirectPurchaseReject(uint clientID, uint storeID, uint productID, uint purchaseID);
+    event DirectPurchaseReceived(uint clientID, uint storeID, uint productID, uint purchaseID);
+    event DirectPurchaseRejected(uint clientID, uint storeID, uint productID, uint purchaseID);
+
+    event AutomaticEscrowPurchaseSent(uint storeID, uint purchaseID, uint productID, bytes32 productHash, uint price);
+    event AutomaticEscrowPurchaseRejected(uint clientID, uint storeID, uint productID, uint purchaseID);
+    event AutomaticEscrowPurchaseCanceled(uint clientID, uint storeID, uint productID, uint purchaseID);
 
     constructor() Ownable() {
         moderators.push(Moderator({
@@ -190,8 +194,7 @@ contract WebWeaver is Ownable, Transferable {
             mode: Modes.DIRECT,
             clientInsurance: 0,
             storeInsurance: 0,
-            state: PurchaseState.A_DIRECT_SENT,
-            closed: false
+            state: PurchaseState.A_DIRECT_SENT
         });
         
         purchases.push(purchase);
@@ -202,23 +205,23 @@ contract WebWeaver is Ownable, Transferable {
 
     function receiveDirectPurchase(uint _purchaseID) public {
         Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.A_DIRECT_SENT, "You can only receive a newly sent purchase");
         Store storage store = stores[purchase.storeID];
         require(store.owner == msg.sender, "You cant confirm a purchase that was not issued to you");
         purchase.state = PurchaseState.F_DIRECT_RECEIVED;
-        purchase.closed = true;
         _internalTransferFunds(purchase.transactionPrice, store.owner);
-        emit DirectPurchaseReceive(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
+        emit DirectPurchaseReceived(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
     function rejectDirectPurchase(uint _purchaseID) public {
         Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.A_DIRECT_SENT, "You can only reject a newly sent purchase");
         Store storage store = stores[purchase.storeID];
         require(store.owner == msg.sender, "You cant reject a purchase that was not issued to you");
         Client storage client = clients[purchase.clientID];
         purchase.state = PurchaseState.F_DIRECT_REJECTED;
-        purchase.closed = true;
         _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
-        emit DirectPurchaseReject(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
+        emit DirectPurchaseRejected(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
     // Automatic Escrow Flow
@@ -230,7 +233,7 @@ contract WebWeaver is Ownable, Transferable {
         require(product.storeID == _storeID, "Store ID missmatch");  // estos chequeos son para evitar confusiones debidas a una mal API call desde el front
         uint256 clientStake = (product.price * ESCROW_PURCHASE_STAKE_PERCENTAGE) / 100;
         require(msg.value == product.price + clientStake, "The value sent does not match the product price plus the stake");
-        
+
         Client storage client = _getClient(msg.sender);
         uint purchaseID = purchases.length;
         Purchase memory purchase = Purchase({
@@ -242,17 +245,38 @@ contract WebWeaver is Ownable, Transferable {
             mode: Modes.AUTOMATIC_ESCROW,
             clientInsurance: clientStake,
             storeInsurance: 0,
-            state: PurchaseState.A_AUTOMATIC_ESCROW_SENT,
-            closed: false
+            state: PurchaseState.A_AUTOMATIC_ESCROW_SENT
         });
+
+        purchases.push(purchase);
+        mappedClientOngoingPurchases[client.clientID].push(purchaseID);
+        mappedStoreOngoingPurchases[product.storeID].push(purchaseID);
+        emit AutomaticEscrowPurchaseSent(product.storeID, purchase.purchaseID, product.productID, product.productHash, product.price);
     }
 
-    function accept(uint256 _productID, uint256 _stake) public payable {
-        Product storage product = catalog[_productID];
-        require(storeIndexes[msg.sender] != 0, "This address does not have a store to its name");
-        require(msg.value == _stake, "The value sent does not match the stake");
-        stores[storeIndexes[msg.sender]].stake += msg.value;
-        //require(estado valido);
+    function rejectAutomaticEscrowPurchase(uint _purchaseID) public {
+        Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.A_AUTOMATIC_ESCROW_SENT, "You can only reject a newly sent purchase");
+        Store storage store = stores[purchase.storeID];
+        require(store.owner == msg.sender, "You cant reject a purchase that was not issued to you");
+        Client storage client = clients[purchase.clientID];
+        purchase.state = PurchaseState.F_AUTOMATIC_ESCROW_REJECTED;
+        _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
+        emit AutomaticEscrowPurchaseRejected(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
+    }
+
+    function clientCancelAutomaticEscrowPurchase(uint _purchaseID) public {  // TODO join this and reject into one function to reduce contract size
+        Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.A_AUTOMATIC_ESCROW_SENT, "You can only cancel a newly sent purchase");
+        Client storage client = clients[purchase.clientID];
+        require(client.clientAddress == msg.sender, "You cant cancel a purchase that was not made by you");
+        purchase.state = PurchaseState.F_AUTOMATIC_ESCROW_CANCELED;
+        _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
+        emit AutomaticEscrowPurchaseCanceled(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
+    }
+
+    function storeConfirmAutomaticEscrowPurchase(uint _purchaseID) public payable {
+        
     }
 
     // Mediated Escrow Flow
