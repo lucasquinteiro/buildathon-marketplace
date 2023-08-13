@@ -5,7 +5,7 @@ type Product = {
   name: string;
   price: number;
   description?: string;
-
+  imagePath?: string;
   // contract props
   inStock: boolean;
   productID: number;
