@@ -24,12 +24,12 @@ enum Flows {
 
 struct Product {
     uint128 productID;
+    string name;
     bytes32 productHash;
     uint64 storeID;
     uint256 price;  // TODO Ver moneda y unidades
     uint32 inStock;
     Flows[] supportedFlows;
-
 }
 
 struct Client {
@@ -143,7 +143,7 @@ contract WebWeaver is Ownable, Transferable {
         stores[storeIndexes[newAddress]].owner = newAddress;
     }
 
-    function registerProduct(uint256 _price, uint32 _stock, Flows[] memory _supportedFlows) public {
+    function registerProduct(uint256 _price, string calldata _name, uint32 _stock, Flows[] memory _supportedFlows) public {
         require(storeIndexes[msg.sender] != 0, "This address does not have a store to its name");  // TODO also receive hash to check its not present
         //push line 42 and push to 42
         //compare bytes32
@@ -151,6 +151,7 @@ contract WebWeaver is Ownable, Transferable {
         bytes32 newproductHash = productHash(_productId, storeIndexes[msg.sender]);
         Product memory newProduct = Product({
             productID: _productId,
+            name: _name,
             productHash: newproductHash,
             storeID: storeIndexes[msg.sender],
             price: _price,
@@ -251,7 +252,7 @@ contract WebWeaver is Ownable, Transferable {
         
     }
 
-    function clientReceive
+    //function clientReceive
 
     // Moderated Escrow Flow
 
@@ -271,7 +272,7 @@ contract WebWeaver is Ownable, Transferable {
         }
     }
 
-    function _getClient(address clientAddress) private returns (Client storage) {
+    function _getClient(address clientAddress) view private returns (Client storage) {
         if (clientIndexes[clientAddress] == 0 && clientAddress != owner()) {
             uint64 clientID = uint64(clients.length);
             Client memory client = Client({
@@ -282,5 +283,9 @@ contract WebWeaver is Ownable, Transferable {
             clientIndexes[clientAddress] = clientID;
         }
         return clients[clientIndexes[clientAddress]];
+    }
+
+    function getCatalog() public view returns (Product[] memory) {
+        return catalog;
     }
 }

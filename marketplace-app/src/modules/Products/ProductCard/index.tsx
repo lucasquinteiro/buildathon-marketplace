@@ -1,3 +1,5 @@
+"use client";
+import BuyButton from "@/components/BuyButton";
 import {
   Card,
   CardContent,
@@ -6,44 +8,46 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import StoreSummary from "@/modules/Store/StoreSummary";
+import sampleStores from "@/modules/Store/sampleStore";
 import Product from "@/types/Product";
 import Image from "next/image";
 import Link from "next/link";
+import useProduct from "../useProduct";
 
-interface Props extends Product {}
+const ProductCard: React.FC<Product> = (product) => {
+  const { name, description, price } = product;
+  const { handleBuyProduct } = useProduct(product);
 
-const ProductCard: React.FC<Props> = ({ name, description, price }) => {
   return (
-    <Link href="/product">
-      <Card className="cursor-pointer w-60 hover:opacity-80">
-        <div className="p-4 bg-green-300">
-          <div className="relative w-full h-20">
-            <Image
-              src="/lemon-footer.svg"
-              fill
-              alt="product"
-              className="relative"
-            />
+    <Card className={"w-60 "}>
+      <Link href="/product">
+        <div className="flex flex-col cursor-pointer hover:opacity-80">
+          <div className="p-4 bg-green-300">
+            <div className="relative w-full h-20">
+              <Image
+                src="/lemon-footer.svg"
+                fill
+                alt="product"
+                className="relative"
+              />
+            </div>
           </div>
-        </div>
 
-        <CardHeader>
-          <CardTitle>{name}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p>{`$${price}`}</p>
-        </CardContent>
-        <CardFooter>
-          <div className="flex flex-col gap-1 overflow-hidden">
-            <p className="text-sm">Vendedor</p>
-            <span className="overflow-hidden text-xs text-ellipsis">
-              0x5124fcC2B3F99F571AD67D075643C743F38f1C34
-            </span>
-          </div>
-        </CardFooter>
-      </Card>
-    </Link>
+          <CardHeader>
+            <CardTitle>{name}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p>{`$${price}`}</p>
+          </CardContent>
+        </div>
+      </Link>
+      <CardFooter className="flex flex-col gap-4">
+        <StoreSummary {...sampleStores[0]} />
+        <BuyButton onBuy={handleBuyProduct} />
+      </CardFooter>
+    </Card>
   );
 };
 

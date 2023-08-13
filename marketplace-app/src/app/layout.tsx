@@ -19,9 +19,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ThirdwebProvider>
+        <ThirdwebProvider activeChain="localhost">
           <Navbar />
-          {children}
+          <div className="min-h-screen px-24 py-12">{children}</div>
         </ThirdwebProvider>
       </body>
     </html>

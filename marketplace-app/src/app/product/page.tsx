@@ -1,5 +1,7 @@
-const Product = () => {
-  return null;
+import Product from "@/modules/Product";
+
+const ProductDetailPage = () => {
+  return <Product />;
 };
 
-export default Product;
+export default ProductDetailPage;
