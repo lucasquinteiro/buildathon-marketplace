@@ -1,4 +1,5 @@
 "use client";
+import BuyButton from "@/components/BuyButton";
 import {
   Card,
   CardContent,
@@ -7,18 +8,17 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import SellerSummary from "@/modules/Seller/SellerSummary";
+import StoreSummary from "@/modules/Store/StoreSummary";
+import sampleStores from "@/modules/Store/sampleStore";
 import Product from "@/types/Product";
-import { ConnectWallet } from "@thirdweb-dev/react";
 import Image from "next/image";
 import Link from "next/link";
+import useProduct from "../useProduct";
 
-const ProductCard: React.FC<Product> = ({
-  name,
-  description,
-  price,
-  owner,
-}) => {
+const ProductCard: React.FC<Product> = (product) => {
+  const { name, description, price } = product;
+  const { handleBuyProduct } = useProduct(product);
+
   return (
     <Card className={"w-60 "}>
       <Link href="/product">
@@ -44,8 +44,8 @@ const ProductCard: React.FC<Product> = ({
         </div>
       </Link>
       <CardFooter className="flex flex-col gap-4">
-        <SellerSummary {...owner} />
-        <ConnectWallet />
+        <StoreSummary {...sampleStores[0]} />
+        <BuyButton onBuy={handleBuyProduct} />
       </CardFooter>
     </Card>
   );

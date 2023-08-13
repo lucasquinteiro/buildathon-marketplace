@@ -1,13 +1,14 @@
 import { WebWeaver } from "../../typechain-types";
-import { deployerAccount, accounts } from "./accounts";
+import { deployerAccount, customerAccount, storeAccount } from "./accounts";
+import { product1, product2 } from "./products";
 import getWallet from "./wallet";
 
 const initializeStore = async (contract: WebWeaver) => {
-  const ownerWallet = getWallet(deployerAccount);
-  const storeOwnerWallet = getWallet(accounts[0]);
-  const customerWallet = getWallet(accounts[1]);
+  const storeOwnerWallet = getWallet(storeAccount);
+  const customerWallet = getWallet(customerAccount);
+  const deployerWallet = getWallet(deployerAccount);
 
-  const contractWithOwner = contract.connect(ownerWallet);
+  const contractWithOwner = contract.connect(deployerWallet);
   const contractWithStoreOwner = contract.connect(storeOwnerWallet);
   const contractWithCustomer = contract.connect(customerWallet);
 
@@ -15,16 +16,16 @@ const initializeStore = async (contract: WebWeaver) => {
   console.log("Empty catalog: ", await contract.getCatalog());
 
   await contractWithStoreOwner.registerProduct(
-    10,
-    100,
-    false,
-    "Test product 1"
+    product1.price,
+    product1.stock,
+    product1.moderatedPurchase,
+    product1.name
   );
   await contractWithStoreOwner.registerProduct(
-    10,
-    100,
-    false,
-    "Test product 2"
+    product2.price,
+    product2.stock,
+    product2.moderatedPurchase,
+    product2.name
   );
 
   console.log("catalog read by store owner", await contract.getCatalog());

@@ -1,6 +1,5 @@
 import Product from "@/types/Product";
 import ProductCard from "./ProductCard";
-import sampleProducts from "./sampleProducts";
 
 interface Props {
   data: Product[];

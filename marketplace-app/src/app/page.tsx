@@ -1,13 +1,12 @@
 "use client";
 
+import { CONTRACT_ADDRESS } from "@/lib/contract";
 import Products from "@/modules/Products";
 import { useContractRead, useContract } from "@thirdweb-dev/react";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { contract } = useContract(
-    "0xECA3340a08ecB03Df92680AF3DB199db3000Addd"
-  );
+  const { contract } = useContract(CONTRACT_ADDRESS);
   const { data, isLoading } = useContractRead(contract, "getCatalog", []);
 
   useEffect(() => {

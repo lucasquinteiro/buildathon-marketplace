@@ -3,14 +3,14 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import SellerSummary from "@/modules/Seller/SellerSummary";
+import StoreSummary from "@/modules/Store/StoreSummary";
+import sampleStores from "@/modules/Store/sampleStore";
 import Product from "@/types/Product";
 import Image from "next/image";
 
-const ProductDetail: React.FC<Product> = ({ name, description, owner }) => {
+const ProductDetail: React.FC<Product> = ({ name, description }) => {
   return (
     <Card className="flex flex-row w-3/4 h-72">
       <div className="flex items-center justify-center w-1/4 p-4">
@@ -30,7 +30,7 @@ const ProductDetail: React.FC<Product> = ({ name, description, owner }) => {
           <CardDescription>{description}</CardDescription>
         </CardHeader>
         <CardFooter>
-          <SellerSummary {...owner} />
+          <StoreSummary {...sampleStores[0]} />
         </CardFooter>
       </div>
     </Card>

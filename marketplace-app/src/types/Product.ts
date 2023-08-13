@@ -8,6 +8,7 @@ type Product = {
   inStock: boolean;
   productID: number;
   storeID: number;
+  productHash: string;
 };
 
 export default Product;

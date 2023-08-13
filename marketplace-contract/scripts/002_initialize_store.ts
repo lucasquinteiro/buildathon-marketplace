@@ -1,11 +1,9 @@
 import { ethers } from "hardhat";
 import initializeStore from "./utils/initialize_store";
+import { CONTRACT_ADDRESS } from "./utils/contract";
 
 async function main() {
-  const contract = await ethers.getContractAt(
-    "WebWeaver",
-    "0xECA3340a08ecB03Df92680AF3DB199db3000Addd"
-  );
+  const contract = await ethers.getContractAt("WebWeaver", CONTRACT_ADDRESS);
 
   await initializeStore(contract);
 }
