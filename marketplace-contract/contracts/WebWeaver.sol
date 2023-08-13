@@ -11,103 +11,103 @@ struct Moderator {
 }
 
 struct Store {
-    uint storeID;
+    uint64 storeID;
     address owner;
-    uint reputation;
+    uint16 reputation;  // TODO revisar concepto
 }
 
-enum Modes {
+enum Flows {
     DIRECT,
     MODERATED_ESCROW,
     AUTOMATIC_ESCROW
 }
 
 struct Product {
-    uint productID;
+    uint128 productID;
     string name;
     bytes32 productHash;
-    uint storeID;
-    uint price;
-    uint inStock;
-    bool moderatedPurchase;  // TODO CHANGE TO USE MODES
-
+    uint64 storeID;
+    uint256 price;  // TODO Ver moneda y unidades
+    uint32 inStock;
+    Flows[] supportedFlows;
 }
 
 struct Client {
-    mapping(uint => uint) pointsPerStore;  // TODO CHANGE TO USE ERC20
-    uint clientID;
+    //mapping(uint256 => uint) pointsPerStore;  // TODO CHANGE TO USE ERC20
+    uint64 clientID;
     address clientAddress;
 }
 
 enum PurchaseState {
-    A_DIRECT_SENT,
-    F_DIRECT_RECEIVED,
-    F_DIRECT_REJECTED,
+    ACTIVE_SENT,
 
-    A_AUTOMATIC_ESCROW_SENT,
-    A_AUTOMATIC_ESCROW_CONFIRMED,
-    A_AUTOMATIC_ESCROW_APPEAL_REQUEST,
-    F_AUTOMATIC_ESCROW_RECEIVED,
-    F_AUTOMATIC_ESCROW_CANCELED,
-    F_AUTOMATIC_ESCROW_REJECTED,
-    // TODO unify a lot of these and unify flow functions, and for specifics, check the purchase mode
-    // TODO also unify events, and add mode to event info, and also change mode for flow?
-    A_MODERATED_ESCROW_SENT,
-    A_MODERATED_ESCROW_CONFIRMED,
-    A_MODERATED_ESCROW_APPEAL_REQUEST,
-    F_MODERATED_ESCROW_RECEIVED,
-    F_MODERATED_ESCROW_CANCELED,
-    F_MODERATED_ESCROW_REJECTED
+    ACTIVE_CONFIRMED,
+    ACTIVE_APPEAL_REQUEST,
+    
+    FINALIZED_RECEIVED,
+    FINALIZED_CANCELED,
+    FINALIZED_REJECTED
 }
 
 struct Purchase {
-    uint clientID;
-    uint productID;
-    uint storeID;
+    uint64 clientID;
+    uint128 productID;
+    uint64 storeID;
 
-    uint purchaseID;
-    uint transactionPrice;
-    Modes mode;
-    uint clientInsurance;
-    uint storeInsurance;
+    uint256 purchaseID;
+    uint256 transactionPrice;  // TODO ver moneda y unidades
+    Flows flow;
+    uint256 clientInsurance;
+    uint256 storeInsurance;
     PurchaseState state;
+    uint256 lastUpdatedTimestamp;
 }
 
+struct PurchaseReferences {
+    mapping(uint64 => uint256[]) mappedClientConcretedPurchases;
+    mapping(uint64 => uint256[]) mappedStoreConcretedPurchases;
+    mapping(uint64 => uint256[]) mappedClientOngoingPurchases;
+    mapping(uint64 => uint256[]) mappedStoreOngoingPurchases;
+    uint256 totalOngoingPurchases;
+}
 
 contract WebWeaver is Ownable, Transferable {
 
     // TODO add store banning logic
 
-    uint8 public ESCROW_PURCHASE_STAKE_PERCENTAGE = 30;  // TODO ver que esto sea seteable per product
+    uint16 CANCELATION_TIMEOUT = 300;
+    mapping(Flows => uint8) public flowsEscrowPercentages;
 
     Moderator[] public moderators;
-    mapping(address => uint) public moderatorIndexes;
+    mapping(address => uint16) public moderatorIndexes;
 
     Store[] public stores;
-    mapping(address => uint) storeIndexes;  // stores[storeIndexes[storeOwnerAddress]] TODO revisar forma de addressear un store desde el front, para hacer un get
+    mapping(address => uint64) storeIndexes;  // stores[storeIndexes[storeOwnerAddress]] TODO revisar forma de addressear un store desde el front, para hacer un get
 
     Client[] public clients;
-    mapping(address => uint) public clientIndexes;
+    mapping(address => uint64) public clientIndexes;
 
     Product[] public catalog;  // TODO ver de hacer otro mapping con el product hash al product id
     //mapping(bytes32 => Product)
-    mapping(address => uint256[]) public mappedCatalogs;  // catalog[mappedCatalogs[storeAddress][X]] TODO cambiar a mapping (uint storeID => uint[] productIDs)
+    mapping(address => uint128[]) public mappedCatalogs;  // catalog[mappedCatalogs[storeAddress][X]] TODO cambiar a mapping (uint256 storeID => uint[] productIDs)
     
     Purchase[] public purchases;  // TODO research: generate purchase ID by = hash(client, product, clientNonce)
-    mapping(uint => uint[]) public mappedClientConcretedPurchases;
-    mapping(uint => uint[]) public mappedStoreConcretedPurchases;
-    mapping(uint => uint[]) public mappedClientOngoingPurchases;
-    mapping(uint => uint[]) public mappedStoreOngoingPurchases;  // TODO aggregate these 4 mappings into one collective static struct?
+    PurchaseReferences public purchaseReferences;
 
-    event DirectPurchaseSent(uint storeID, uint purchaseID, uint productID, bytes32 productHash, uint price);
-    event DirectPurchaseReceived(uint clientID, uint storeID, uint productID, uint purchaseID);
-    event DirectPurchaseRejected(uint clientID, uint storeID, uint productID, uint purchaseID);
-
-    event AutomaticEscrowPurchaseSent(uint storeID, uint purchaseID, uint productID, bytes32 productHash, uint price);
-    event AutomaticEscrowPurchaseRejected(uint clientID, uint storeID, uint productID, uint purchaseID);
-    event AutomaticEscrowPurchaseCanceled(uint clientID, uint storeID, uint productID, uint purchaseID);
+    event PurchaseSent(uint64 storeID, Flows purchaseFlow, uint256 purchaseID, uint128 productID, bytes32 productHash, uint256 price);
+    
+    event PurchaseConfirmed(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
+    event PurchaseAppealed(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
+    
+    event PurchaseReceived(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
+    event PurchaseRejected(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
+    event PurchaseCanceled(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
 
     constructor() Ownable() {
+        flowsEscrowPercentages[Flows.DIRECT] = 0;
+        flowsEscrowPercentages[Flows.AUTOMATIC_ESCROW] = 30;
+        flowsEscrowPercentages[Flows.MODERATED_ESCROW] = 5;
+
         moderators.push(Moderator({
             moderatorAddress: msg.sender
         }));
@@ -123,9 +123,9 @@ contract WebWeaver is Ownable, Transferable {
 
     // Public Interaction Functions
 
-    function registerStore(address storeOwner) public onlyOwner returns (uint storeID) {
+    function registerStore(address storeOwner) public onlyOwner returns (uint64 storeID) {
         require(storeIndexes[storeOwner] == 0, "This address already has a store to its name");
-        storeID = stores.length;
+        storeID = uint64(stores.length);
         stores.push(Store({
             storeID: storeID,
             owner: storeOwner,
@@ -143,11 +143,11 @@ contract WebWeaver is Ownable, Transferable {
         stores[storeIndexes[newAddress]].owner = newAddress;
     }
 
-    function registerProduct(uint _price, uint _stock, bool _moderatedPurchase, string memory _name) public {
+    function registerProduct(uint256 _price, string calldata _name, uint32 _stock, Flows[] memory _supportedFlows) public {
         require(storeIndexes[msg.sender] != 0, "This address does not have a store to its name");  // TODO also receive hash to check its not present
         //push line 42 and push to 42
         //compare bytes32
-        uint _productId = catalog.length;
+        uint128 _productId = uint128(catalog.length);
         bytes32 newproductHash = productHash(_productId, storeIndexes[msg.sender]);
         Product memory newProduct = Product({
             productID: _productId,
@@ -156,137 +156,109 @@ contract WebWeaver is Ownable, Transferable {
             storeID: storeIndexes[msg.sender],
             price: _price,
             inStock: _stock,
-            moderatedPurchase: _moderatedPurchase
+            supportedFlows: _supportedFlows
         });
         catalog.push(newProduct);
         mappedCatalogs[msg.sender].push(_productId);
     }
 
-    function updateProduct(uint _productId, uint _price, uint _stock, bool _moderatedPurchase) public {
+    function updateProduct(uint128 _productId, uint256 _price, uint32 _stock, Flows[] memory _supportedFlows) public {
         Product storage  updateableProduct=catalog[_productId];
         require(updateableProduct.storeID == storeIndexes[msg.sender], "The product you are trying to update does not belong to your store");
         updateableProduct.price = _price;
         updateableProduct.inStock = _stock;
-        updateableProduct.moderatedPurchase = _moderatedPurchase;
+        updateableProduct.supportedFlows = _supportedFlows;
         
     }
 
-    function productHash(uint256 _productId, uint256 storeID) private pure returns(bytes32) {  // TODO revisar esto para matchear con el hash del web2 back
+    function productHash(uint128 _productId, uint64 storeID) private pure returns(bytes32) {  // TODO revisar esto para matchear con el hash del web2 back
         return bytes32(keccak256(abi.encodePacked(_productId, storeID)));
+    }
+
+    // All Flows
+
+    function purchaseProduct(uint128 _productID, bytes32 _productHash, uint64 _storeID, Flows _purchaseFlow) public payable {
+        Product storage product = catalog[_productID];
+        uint256 clientStake = (product.price * flowsEscrowPercentages[_purchaseFlow]) / 100;
+        require(product.productID == _productID, "Product ID missmatch");  //TODO redundant?
+        require(product.productHash == _productHash, "Product HASH missmatch");
+        require(product.storeID == _storeID, "Store ID missmatch");  // estos chequeos son para evitar confusiones debidas a una mal API call desde el front
+        require(msg.value == product.price + clientStake, "The value sent does not match the product price plus the mode stake");
+
+        Client storage client = _getClient(msg.sender);
+        uint256 purchaseID = purchases.length;
+        Purchase memory purchase = Purchase({
+            clientID: client.clientID,
+            productID: product.productID,
+            storeID: product.storeID,
+
+            purchaseID: purchaseID,
+            transactionPrice: product.price,
+            flow: _purchaseFlow,
+            clientInsurance: clientStake,
+            storeInsurance: 0,
+            state: PurchaseState.ACTIVE_SENT,
+            lastUpdatedTimestamp: block.timestamp
+        });
+        
+        purchases.push(purchase);
+        purchaseReferences.mappedClientOngoingPurchases[client.clientID].push(purchaseID);
+        purchaseReferences.mappedStoreOngoingPurchases[product.storeID].push(purchaseID);
+        emit PurchaseSent(product.storeID, purchase.flow, purchase.purchaseID, product.productID, product.productHash, product.price);
+    }
+
+    function rejectPurchase(uint256 _purchaseID) public {
+        Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only reject a newly sent purchase");
+        Store storage store = stores[purchase.storeID];
+        require(store.owner == msg.sender, "You cant reject a purchase that was not issued to you");
+        Client storage client = clients[purchase.clientID];
+        purchase.state = PurchaseState.FINALIZED_REJECTED;
+        _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
+        emit PurchaseRejected(purchase.clientID, purchase.flow, purchase.storeID, purchase.productID, purchase.purchaseID);
+    }
+
+    function clientCancelPurchase(uint256 _purchaseID) public {
+        Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only cancel a newly sent purchase");
+        require(purchase.lastUpdatedTimestamp <= block.timestamp + CANCELATION_TIMEOUT, "You must wait a minimum period before you can cancel");
+        Client storage client = clients[purchase.clientID];
+        require(client.clientAddress == msg.sender, "You cant cancel a purchase that was not made by you");
+        purchase.state = PurchaseState.FINALIZED_CANCELED;
+        _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
+        // TODO update client reputation?
+        emit PurchaseCanceled(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
     // Direct Flow
 
-    function directPurchase(uint _productID, bytes32 _productHash, uint _storeID) public payable {
-        Product storage product = catalog[_productID];
-        require(product.productID == _productID, "Product ID missmatch");  //TODO redundant?
-        require(product.productHash == _productHash, "Product HASH missmatch");
-        require(product.storeID == _storeID, "Store ID missmatch");  // estos chequeos son para evitar confusiones debidas a una mal API call desde el front
-        require(msg.value == product.price, "The value sent does not match the product price");
-        
-        Client storage client = _getClient(msg.sender);
-        uint purchaseID = purchases.length;
-        Purchase memory purchase = Purchase({
-            clientID: client.clientID,
-            productID: product.productID,
-            storeID: product.storeID,
-
-            purchaseID: purchaseID,
-            transactionPrice: product.price,
-            mode: Modes.DIRECT,
-            clientInsurance: 0,
-            storeInsurance: 0,
-            state: PurchaseState.A_DIRECT_SENT
-        });
-        
-        purchases.push(purchase);
-        mappedClientOngoingPurchases[client.clientID].push(purchaseID);
-        mappedStoreOngoingPurchases[product.storeID].push(purchaseID);
-        emit DirectPurchaseSent(product.storeID, purchase.purchaseID, product.productID, product.productHash, product.price);
-    }
-
-    function receiveDirectPurchase(uint _purchaseID) public {
+    function receiveDirectPurchase(uint256 _purchaseID) public {
         Purchase storage purchase = purchases[_purchaseID];
-        require(purchase.state == PurchaseState.A_DIRECT_SENT, "You can only receive a newly sent purchase");
+        require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only receive a newly sent purchase");
         Store storage store = stores[purchase.storeID];
-        require(store.owner == msg.sender, "You cant confirm a purchase that was not issued to you");
-        purchase.state = PurchaseState.F_DIRECT_RECEIVED;
+        require(store.owner == msg.sender, "You cant receive a purchase that was not issued to you");
+        purchase.state = PurchaseState.FINALIZED_RECEIVED;
         _internalTransferFunds(purchase.transactionPrice, store.owner);
-        emit DirectPurchaseReceived(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
-    }
-
-    function rejectDirectPurchase(uint _purchaseID) public {
-        Purchase storage purchase = purchases[_purchaseID];
-        require(purchase.state == PurchaseState.A_DIRECT_SENT, "You can only reject a newly sent purchase");
-        Store storage store = stores[purchase.storeID];
-        require(store.owner == msg.sender, "You cant reject a purchase that was not issued to you");
-        Client storage client = clients[purchase.clientID];
-        purchase.state = PurchaseState.F_DIRECT_REJECTED;
-        _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
-        emit DirectPurchaseRejected(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
+        emit PurchaseReceived(purchase.clientID, Flows.DIRECT, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
     // Automatic Escrow Flow
 
-    function automaticEscrowPurchase(uint _productID, bytes32 _productHash, uint _storeID) public payable {  // TODO cambiar todos los uint por tipo especifico
-        Product storage product = catalog[_productID];
-        require(product.productID == _productID, "Product ID missmatch");  //TODO redundant?
-        require(product.productHash == _productHash, "Product HASH missmatch");
-        require(product.storeID == _storeID, "Store ID missmatch");  // estos chequeos son para evitar confusiones debidas a una mal API call desde el front
-        uint256 clientStake = (product.price * ESCROW_PURCHASE_STAKE_PERCENTAGE) / 100;
-        require(msg.value == product.price + clientStake, "The value sent does not match the product price plus the stake");
-
-        Client storage client = _getClient(msg.sender);
-        uint purchaseID = purchases.length;
-        Purchase memory purchase = Purchase({
-            purchaseID: purchaseID,
-            clientID: client.clientID,
-            productID: product.productID,
-            storeID: product.storeID,
-            transactionPrice: product.price,
-            mode: Modes.AUTOMATIC_ESCROW,
-            clientInsurance: clientStake,
-            storeInsurance: 0,
-            state: PurchaseState.A_AUTOMATIC_ESCROW_SENT
-        });
-
-        purchases.push(purchase);
-        mappedClientOngoingPurchases[client.clientID].push(purchaseID);
-        mappedStoreOngoingPurchases[product.storeID].push(purchaseID);
-        emit AutomaticEscrowPurchaseSent(product.storeID, purchase.purchaseID, product.productID, product.productHash, product.price);
-    }
-
-    function rejectAutomaticEscrowPurchase(uint _purchaseID) public {
+    function storeConfirmAutomaticEscrowPurchase(uint256 _purchaseID) public payable {
         Purchase storage purchase = purchases[_purchaseID];
-        require(purchase.state == PurchaseState.A_AUTOMATIC_ESCROW_SENT, "You can only reject a newly sent purchase");
+        require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only receive a newly sent purchase");
         Store storage store = stores[purchase.storeID];
-        require(store.owner == msg.sender, "You cant reject a purchase that was not issued to you");
-        Client storage client = clients[purchase.clientID];
-        purchase.state = PurchaseState.F_AUTOMATIC_ESCROW_REJECTED;
-        _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
-        emit AutomaticEscrowPurchaseRejected(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
-    }
-
-    function clientCancelAutomaticEscrowPurchase(uint _purchaseID) public {  // TODO join this and reject into one function to reduce contract size
-        Purchase storage purchase = purchases[_purchaseID];
-        require(purchase.state == PurchaseState.A_AUTOMATIC_ESCROW_SENT, "You can only cancel a newly sent purchase");
-        Client storage client = clients[purchase.clientID];
-        require(client.clientAddress == msg.sender, "You cant cancel a purchase that was not made by you");
-        purchase.state = PurchaseState.F_AUTOMATIC_ESCROW_CANCELED;
-        _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
-        emit AutomaticEscrowPurchaseCanceled(purchase.clientID, purchase.storeID, purchase.productID, purchase.purchaseID);
-    }
-
-    function storeConfirmAutomaticEscrowPurchase(uint _purchaseID) public payable {
+        require(store.owner == msg.sender, "You cant receive a purchase that was not issued to you");
         
     }
 
-    // Mediated Escrow Flow
+    //function clientReceive
 
-    function mediatedEscrowPurchase() public payable {
-        //minimum return fee
-    }
+    // Moderated Escrow Flow
 
+
+
+    
     // Private Functions
 
     //Call reputation after confirmation
@@ -300,9 +272,15 @@ contract WebWeaver is Ownable, Transferable {
         }
     }
 
-    function _getClient(address clientAddress) view private returns (Client storage) {
+    function _getClient(address clientAddress) private returns (Client storage) {
         if (clientIndexes[clientAddress] == 0 && clientAddress != owner()) {
-            // TODO register client
+            uint64 clientID = uint64(clients.length);
+            Client memory client = Client({
+                clientAddress: clientAddress,
+                clientID: clientID
+            });
+            clients.push(client);
+            clientIndexes[clientAddress] = clientID;
         }
         return clients[clientIndexes[clientAddress]];
     }
