@@ -18,7 +18,7 @@ import useProduct from "../useProduct";
 const ProductCard: React.FC<Product> = (product) => {
   const { name, description, price } = product;
   const { handleBuyProduct } = useProduct(product);
-
+  const store = { ...sampleStores[0], storeID: product.storeID };
   return (
     <Card className={"w-60 "}>
       <Link href="/product">
@@ -44,7 +44,7 @@ const ProductCard: React.FC<Product> = (product) => {
         </div>
       </Link>
       <CardFooter className="flex flex-col gap-4">
-        <StoreSummary {...sampleStores[0]} />
+        <StoreSummary {...store} />
         <BuyButton onBuy={handleBuyProduct} />
       </CardFooter>
     </Card>

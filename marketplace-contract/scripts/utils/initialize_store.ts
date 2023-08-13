@@ -15,17 +15,19 @@ const initializeStore = async (contract: WebWeaver) => {
   await contractWithOwner.registerStore(storeOwnerWallet.address);
   console.log("Empty catalog: ", await contract.getCatalog());
 
+  const DIRECT_FLOW = 0;
+
   await contractWithStoreOwner.registerProduct(
     product1.price,
+    product1.name,
     product1.stock,
-    product1.moderatedPurchase,
-    product1.name
+    [DIRECT_FLOW]
   );
   await contractWithStoreOwner.registerProduct(
     product2.price,
+    product2.name,
     product2.stock,
-    product2.moderatedPurchase,
-    product2.name
+    [DIRECT_FLOW]
   );
 
   console.log("catalog read by store owner", await contract.getCatalog());

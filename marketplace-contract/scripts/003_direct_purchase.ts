@@ -12,11 +12,14 @@ async function main() {
   // await contractWithCustomer.directPurchase();
   const catalog = await contractWithCustomer.getCatalog();
   const product = catalog[0];
+  const DIRECT_FLOW = 0;
 
-  const response = await contractWithCustomer.directPurchase(
+  // uint128 _productID, bytes32 _productHash, uint64 _storeID, Flows _purchaseFlow
+  const response = await contractWithCustomer.purchaseProduct(
     product.productID,
     product.productHash,
     product.storeID,
+    DIRECT_FLOW,
     {
       value: product.price,
     }

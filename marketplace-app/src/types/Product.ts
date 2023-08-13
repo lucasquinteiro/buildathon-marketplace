@@ -1,3 +1,5 @@
+import { BigNumber } from "ethers";
+
 type Product = {
   id: number;
   name: string;
@@ -7,7 +9,7 @@ type Product = {
   // contract props
   inStock: boolean;
   productID: number;
-  storeID: number;
+  storeID: BigNumber;
   productHash: string;
 };
 
