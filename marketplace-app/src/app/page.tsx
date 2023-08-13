@@ -14,7 +14,7 @@ export default function Home() {
   }, [data, isLoading]);
 
   return (
-    <main className="flex flex-col items-center justify-between">
+    <main className="flex flex-col items-center justify-between px-24 py-12">
       <Products data={data || []} />
     </main>
   );
