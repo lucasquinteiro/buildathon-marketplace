@@ -5,7 +5,9 @@ import { useContractRead, useContract } from "@thirdweb-dev/react";
 import { useEffect } from "react";
 
 export default function Home() {
-  const { contract } = useContract(process.env.CONTRACT_ADDRESS);
+  const { contract } = useContract(
+    "0xECA3340a08ecB03Df92680AF3DB199db3000Addd"
+  );
   const { data, isLoading } = useContractRead(contract, "getCatalog", []);
 
   useEffect(() => {

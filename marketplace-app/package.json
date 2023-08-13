@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@radix-ui/react-avatar": "^1.0.3",
     "@radix-ui/react-slot": "^1.0.2",
     "@thirdweb-dev/react": "^3.14.28",
     "@thirdweb-dev/sdk": "^3.10.47",
