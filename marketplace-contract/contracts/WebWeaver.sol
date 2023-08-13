@@ -272,7 +272,7 @@ contract WebWeaver is Ownable, Transferable {
         }
     }
 
-    function _getClient(address clientAddress) view private returns (Client storage) {
+    function _getClient(address clientAddress) private returns (Client storage) {
         if (clientIndexes[clientAddress] == 0 && clientAddress != owner()) {
             uint64 clientID = uint64(clients.length);
             Client memory client = Client({
