@@ -97,8 +97,8 @@
     },
     {
       "type": "text",
-      "version": 178,
-      "versionNonce": 1285525996,
+      "version": 187,
+      "versionNonce": 746518996,
       "isDeleted": false,
       "id": "DyQ5gvHvHVXF0xoEPnv_Z",
       "fillStyle": "hachure",
@@ -111,7 +111,7 @@
       "y": 99,
       "strokeColor": "#000000",
       "backgroundColor": "transparent",
-      "width": 165.22695922851562,
+      "width": 157.08566284179688,
       "height": 32.62790169901821,
       "seed": 1458406174,
       "groupIds": [],
@@ -122,16 +122,16 @@
           "type": "arrow"
         }
       ],
-      "updated": 1691890328059,
+      "updated": 1691893914577,
       "link": null,
       "locked": false,
       "fontSize": 13.051160679607285,
       "fontFamily": 1,
-      "text": "cliente llama a \nautomaticEscrowPurchase",
+      "text": "cliente llama a \nmediatedEscrowPurchase",
       "textAlign": "left",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "cliente llama a \nautomaticEscrowPurchase",
+      "originalText": "cliente llama a \nmediatedEscrowPurchase",
       "lineHeight": 1.25,
       "baseline": 27
     },
@@ -947,8 +947,8 @@
     },
     {
       "type": "text",
-      "version": 466,
-      "versionNonce": 1375869396,
+      "version": 467,
+      "versionNonce": 477951956,
       "isDeleted": false,
       "id": "6HejVVVbuRd6XYXByqE1t",
       "fillStyle": "hachure",
@@ -967,16 +967,16 @@
       "groupIds": [],
       "roundness": null,
       "boundElements": [],
-      "updated": 1691890328060,
+      "updated": 1691953955206,
       "link": null,
       "locked": false,
       "fontSize": 16,
       "fontFamily": 1,
-      "text": "APEAL \nREQUEST",
+      "text": "APPEAL \nREQUEST",
       "textAlign": "center",
       "verticalAlign": "middle",
       "containerId": "ZEs_XdCmIzBJESNwuaHLW",
-      "originalText": "APEAL REQUEST",
+      "originalText": "APPEAL REQUEST",
       "lineHeight": 1.25,
       "baseline": 34
     },
@@ -1088,8 +1088,8 @@
     },
     {
       "type": "ellipse",
-      "version": 354,
-      "versionNonce": 823496684,
+      "version": 355,
+      "versionNonce": 1028171756,
       "isDeleted": false,
       "id": "UHecECE98Nz9Nbc1T6pEF",
       "fillStyle": "hachure",
@@ -1117,9 +1117,13 @@
         {
           "id": "TK37HK8Lm45JF39EexT4u",
           "type": "arrow"
+        },
+        {
+          "id": "uXql72KM76pShIwh7lCYN",
+          "type": "arrow"
         }
       ],
-      "updated": 1691890328061,
+      "updated": 1691952884832,
       "link": null,
       "locked": false
     },
@@ -1633,6 +1637,97 @@
       "containerId": null,
       "originalText": "REVISAR TEMA DE REPARTIJA\nY PAGO DEL MOD. VER DE AGREGAR UN PERIODO\nDE GRACIA EN EL CUAL TANTO EL VENDEDOR\nCOMO EL CLIENTE PUEDEN QUEJARSE DE LA\nRESOLUCION DEL MOD",
       "lineHeight": 1.25
+    },
+    {
+      "type": "arrow",
+      "version": 120,
+      "versionNonce": 384244948,
+      "isDeleted": false,
+      "id": "uXql72KM76pShIwh7lCYN",
+      "fillStyle": "hachure",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 676.6047457350419,
+      "y": 615,
+      "strokeColor": "#364fc7",
+      "backgroundColor": "transparent",
+      "width": 119,
+      "height": 28,
+      "seed": 1185420893,
+      "groupIds": [],
+      "roundness": {
+        "type": 2
+      },
+      "boundElements": [],
+      "updated": 1691952884832,
+      "link": null,
+      "locked": false,
+      "startBinding": {
+        "elementId": "UHecECE98Nz9Nbc1T6pEF",
+        "focus": -0.22225340870553703,
+        "gap": 8.782680141282711
+      },
+      "endBinding": {
+        "elementId": "xsZQyZHNBRj4unj8r6Vuu",
+        "focus": -0.5011429858307772,
+        "gap": 4.695510864257926
+      },
+      "lastCommittedPoint": null,
+      "startArrowhead": null,
+      "endArrowhead": "arrow",
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          -119,
+          -28
+        ]
+      ]
+    },
+    {
+      "type": "text",
+      "version": 207,
+      "versionNonce": 1458533100,
+      "isDeleted": false,
+      "id": "xsZQyZHNBRj4unj8r6Vuu",
+      "fillStyle": "hachure",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roughness": 1,
+      "opacity": 100,
+      "angle": 0,
+      "x": 332.6047457350418,
+      "y": 558,
+      "strokeColor": "#364fc7",
+      "backgroundColor": "transparent",
+      "width": 220.3044891357422,
+      "height": 60,
+      "seed": 1632124979,
+      "groupIds": [],
+      "roundness": null,
+      "boundElements": [
+        {
+          "id": "uXql72KM76pShIwh7lCYN",
+          "type": "arrow"
+        }
+      ],
+      "updated": 1691952884789,
+      "link": null,
+      "locked": false,
+      "fontSize": 16,
+      "fontFamily": 1,
+      "text": "ACA SE LE ENTREGAN\nLOS TOKENS DE \"PUNTOS\"\nAL CLIENTE",
+      "textAlign": "left",
+      "verticalAlign": "top",
+      "containerId": null,
+      "originalText": "ACA SE LE ENTREGAN\nLOS TOKENS DE \"PUNTOS\"\nAL CLIENTE",
+      "lineHeight": 1.25,
+      "baseline": 54
     }
   ],
   "appState": {
