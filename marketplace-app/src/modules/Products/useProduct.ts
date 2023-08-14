@@ -3,22 +3,21 @@
 import { CONTRACT_ADDRESS } from "@/lib/contract";
 import Product from "@/types/Product";
 import { useContract, useContractWrite } from "@thirdweb-dev/react";
-import { ethers, utils } from "ethers";
 
 const useProduct = (product: Product) => {
   const { contract } = useContract(CONTRACT_ADDRESS);
-  const { mutateAsync, isLoading, error } = useContractWrite(
-    contract,
-    "directPurchase"
-  );
+  const {
+    mutateAsync: purchaseProduct,
+    isLoading,
+    error,
+  } = useContractWrite(contract, "purchaseProduct");
 
   const handleBuyProduct = async () => {
     try {
       console.log(product.productID, product.productHash, product.storeID);
-      const response = await mutateAsync({
-        args: [product.productID, product.productHash, product.storeID],
+      const response = await purchaseProduct({
+        args: [product.productID, product.productHash, product.storeID, 0],
         overrides: {
-          //   value: ethers.BigNumber.from(product.price),
           value: product.price,
         },
       });

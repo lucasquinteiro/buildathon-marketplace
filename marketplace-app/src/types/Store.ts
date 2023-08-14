@@ -1,5 +1,12 @@
+import { BigNumber } from "ethers";
+
 type Store = {
-  address: string;
+  storeID: BigNumber;
   name: string;
-  imageUrl: string;
+  imagePath: string;
+  bannerPath: string;
+  owner: string;
+  reputation: number;
 };
+
+export default Store;

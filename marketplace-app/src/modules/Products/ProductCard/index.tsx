@@ -14,22 +14,38 @@ import Product from "@/types/Product";
 import Image from "next/image";
 import Link from "next/link";
 import useProduct from "../useProduct";
+import { CONTRACT_ADDRESS } from "@/lib/contract";
+import { useContract, useContractRead } from "@thirdweb-dev/react";
 
-const ProductCard: React.FC<Product> = (product) => {
+interface Props extends Product {
+  showStoreSummary?: boolean;
+}
+
+const ProductCard: React.FC<Props> = ({
+  showStoreSummary = true,
+  ...product
+}) => {
   const { name, description, price } = product;
   const { handleBuyProduct } = useProduct(product);
+  const { contract } = useContract(CONTRACT_ADDRESS);
+  const { data: storeData } = useContractRead(contract, "stores", [
+    product.storeID,
+  ]);
 
   return (
-    <Card className={"w-60 "}>
+    <Card className="w-full md:w-60">
       <Link href="/product">
         <div className="flex flex-col cursor-pointer hover:opacity-80">
-          <div className="p-4 bg-green-300">
-            <div className="relative w-full h-20">
+          <div className="p-4">
+            <div className="relative w-full h-40">
               <Image
-                src="/lemon-footer.svg"
+                src={`/products/${product.imagePath}`}
                 fill
                 alt="product"
                 className="relative"
+                style={{
+                  objectFit: "contain",
+                }}
               />
             </div>
           </div>
@@ -44,7 +60,7 @@ const ProductCard: React.FC<Product> = (product) => {
         </div>
       </Link>
       <CardFooter className="flex flex-col gap-4">
-        <StoreSummary {...sampleStores[0]} />
+        {showStoreSummary && storeData && <StoreSummary {...storeData} />}
         <BuyButton onBuy={handleBuyProduct} />
       </CardFooter>
     </Card>
