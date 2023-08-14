@@ -106,6 +106,17 @@ contract WebWeaver is Ownable, Transferable {
     event PurchaseRejected(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
     event PurchaseCanceled(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
 
+    modifier onlyModerator() {
+        uint16 i;
+        for (i = 0; i < moderators.length; i++) {
+            if (moderators[i].moderatorAddress == msg.sender) {
+                break;
+            }
+        }
+        require(i == moderators.length, "This function can only be accessed by moderators");
+        _;
+    }
+
     constructor() Ownable() {
         flowsEscrowPercentages[Flows.DIRECT] = 0;
         flowsEscrowPercentages[Flows.AUTOMATIC_ESCROW] = 30;
@@ -282,7 +293,9 @@ contract WebWeaver is Ownable, Transferable {
         
     }
 
-    //function clientReceive
+    function clientReceivePurchase() public {
+        
+    }
 
     // Moderated Escrow Flow
 
