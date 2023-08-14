@@ -1,0 +1,38 @@
+{
+    "stores": [
+        {
+            "name": "Subway",
+            "products": [
+                {
+                "price": 10,
+                "stock": 100,
+                "name": "Turkey Combo",
+                "imagePath": "product1.jpeg",
+                "description": "Footlong sub with turkey, lettuce, tomato, and mayo.",
+                "flows": [0]
+                },
+                {
+                "price": 20,
+                "stock": 100,
+                "name": "Teriyaki",
+                "imagePath": "product2.webp",
+                "description": "Teriyaki footlong sub with turkey, lettuce, tomato, and mayo.",
+                "flows": [0]
+                }
+            ]
+        },
+        {
+            "name": "lucciano's",
+            "products": [
+                {
+                "price": 30,
+                "stock": 100,
+                "name": "Paleta Minion",
+                "imagePath": "product3.png",
+                "description": "Paleta de frutilla.",
+                "flows": [0]
+                }
+            ]
+        }
+    ]
+}
