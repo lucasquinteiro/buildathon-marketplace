@@ -33,7 +33,7 @@ const ProductCard: React.FC<Props> = ({
   ]);
 
   return (
-    <Card className="w-60">
+    <Card className="w-full md:w-60">
       <Link href="/product">
         <div className="flex flex-col cursor-pointer hover:opacity-80">
           <div className="p-4">
