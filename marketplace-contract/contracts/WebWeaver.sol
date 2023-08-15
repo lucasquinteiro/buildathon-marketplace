@@ -106,17 +106,6 @@ contract WebWeaver is Ownable, Transferable {
     event PurchaseRejected(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
     event PurchaseCanceled(uint64 clientID, Flows purchaseFlow, uint64 storeID, uint128 productID, uint256 purchaseID);
 
-    modifier onlyModerator() {
-        uint16 i;
-        for (i = 0; i < moderators.length; i++) {
-            if (moderators[i].moderatorAddress == msg.sender) {
-                break;
-            }
-        }
-        require(i == moderators.length, "This function can only be accessed by moderators");
-        _;
-    }
-
     constructor() Ownable() {
         flowsEscrowPercentages[Flows.DIRECT] = 0;
         flowsEscrowPercentages[Flows.AUTOMATIC_ESCROW] = 30;
@@ -170,6 +159,16 @@ contract WebWeaver is Ownable, Transferable {
         }));
         storeIndexes[storeOwner] = storeID;
         return storeID;
+    }
+    function addModerator(address _moderator) public onlyOwner(){
+            moderatorIndexes[_moderator]+=1;
+            moderators.push(Moderator({
+                moderatorAddress: _moderator
+            }));
+
+        }
+    function getModeratorIDByAddress(address _moderator) public view returns (uint256) {  // TODO limit output size
+        return   moderatorIndexes[_moderator];
     }
 
     function changeStoreAddress(address oldAddress, address newAddress) public onlyOwner {
@@ -256,6 +255,7 @@ contract WebWeaver is Ownable, Transferable {
         Client storage client = clients[purchase.clientID];
         purchase.state = PurchaseState.FINALIZED_REJECTED;
         _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
+        purchase.lastUpdatedTimestamp=block.timestamp;
         emit PurchaseRejected(purchase.clientID, purchase.flow, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
@@ -268,6 +268,7 @@ contract WebWeaver is Ownable, Transferable {
         purchase.state = PurchaseState.FINALIZED_CANCELED;
         _internalTransferFunds(purchase.transactionPrice, client.clientAddress);
         // TODO update client reputation?
+        purchase.lastUpdatedTimestamp=block.timestamp;
         emit PurchaseCanceled(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
@@ -280,6 +281,7 @@ contract WebWeaver is Ownable, Transferable {
         require(store.owner == msg.sender, "You cant receive a purchase that was not issued to you");
         purchase.state = PurchaseState.FINALIZED_RECEIVED;
         _internalTransferFunds(purchase.transactionPrice, store.owner);
+        purchase.lastUpdatedTimestamp=block.timestamp;
         emit PurchaseReceived(purchase.clientID, Flows.DIRECT, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
@@ -287,20 +289,110 @@ contract WebWeaver is Ownable, Transferable {
 
     function storeConfirmEscrowPurchase(uint256 _purchaseID) public payable { //acepta el purchase (va de sent a confirmed)
         Purchase storage purchase = purchases[_purchaseID];
-        require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only receive a newly sent purchase");
+        require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only send a newly received purchase");
         Store storage store = stores[purchase.storeID];
         require(store.owner == msg.sender, "You cant receive a purchase that was not issued to you");
+        require(msg.value == purchase.clientInsurance, "The value sent does not match the store stake");
+        purchase.lastUpdatedTimestamp=block.timestamp;
+        purchase.state = PurchaseState.ACTIVE_CONFIRMED;
+        emit PurchaseConfirmed(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
+    }
+
+    function storeCancelsEscrowPurchaseAfterConfirmation(uint256 _purchaseID) public { //va de confirmed a canceled //TODO: Dejar de repetir el codigo de stake reentrancy
+            Purchase storage purchase = purchases[_purchaseID];
+            require(purchase.state == PurchaseState.ACTIVE_CONFIRMED, "You can only cancel a newly confirmed purchase");
+            Store storage store = stores[purchase.storeID];
+            require(store.owner == msg.sender, "You cant cancel a purchase that was not issued to you");
+            Client storage client = clients[purchase.clientID];
+            purchase.lastUpdatedTimestamp=block.timestamp;
+            purchase.state = PurchaseState.FINALIZED_CANCELED;
+            //Hardcoded negative reputation
+            _reputation(false, 5,store.owner);
+            _internalTransferFunds(purchase.transactionPrice+purchase.clientInsurance, client.clientAddress);
+            _internalTransferFunds(purchase.clientInsurance, store.owner);
+            emit PurchaseCanceled(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
+
+
+
+    }
+
+    function clientReceivePurchase(uint256 _purchaseID) public { //va de confirmed a received //WARN: SI LLEGAS A PONER ESTO A PROD HACE UNA FUNCION ANTI-REENTRANT
+        Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.ACTIVE_CONFIRMED, "You can only receive a newly sent purchase");
+        Client storage client = clients[purchase.clientID];
+        Store storage store = stores[purchase.storeID];
+
+        require(client.clientAddress == msg.sender, "You cant receive a purchase that was not made by you");
+        purchase.lastUpdatedTimestamp=block.timestamp;
+        purchase.state = PurchaseState.FINALIZED_RECEIVED; //Esta es un parche provicional de la vuln, que es declarar el estado antes de transferir los fondos
+        _internalTransferFunds(purchase.clientInsurance, client.clientAddress);
+        _internalTransferFunds((purchase.transactionPrice+purchase.clientInsurance), store.owner);
+        emit PurchaseReceived(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
+    }
+    modifier checkflow(uint256 _purchaseID){
+        Purchase storage purchase = purchases[_purchaseID];
+        Client storage client = clients[purchase.clientID];
+        require(purchase.flow == Flows.MODERATED_ESCROW || purchase.flow == Flows.AUTOMATIC_ESCROW, "You can only appeal a purchase that was made with escrow");
+        if(purchase.flow==Flows.MODERATED_ESCROW){
+            require(msg.sender == client.clientAddress || msg.sender == stores[purchase.storeID].owner, "You can only appeal a moderated purchase that was made in a moderated escrow");
+        }
+        else{require(msg.sender == client.clientAddress, "You can only appeal a  automatic purchase if you are a client");}
+        _;
+    }
+
+    function appealPurchase(uint256 _purchaseID) public checkflow(_purchaseID){
+        Purchase storage purchase = purchases[_purchaseID];
+        purchase.lastUpdatedTimestamp=block.timestamp;
+        purchase.state = PurchaseState.ACTIVE_APPEAL_REQUEST;
+        emit PurchaseAppealed(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
+    }
+    modifier whoReceiveResolves(uint256 _purchaseID){
+    Purchase storage purchase = purchases[_purchaseID];
+    Client storage client = clients[purchase.clientID];
+    require(purchase.flow == Flows.MODERATED_ESCROW || purchase.flow == Flows.AUTOMATIC_ESCROW, "You can only appeal a purchase that was made with escrow");
+    if(purchase.flow==Flows.MODERATED_ESCROW){
+        require(moderatorIndexes[msg.sender] >= 0, "You can only CancelResolve a moderated purchase that was made in a moderated escrow if you are  the Moderatorr");
+    }
+    else{require(msg.sender == client.clientAddress, "You can only CancelReslve in an automatic purchase if you are the store owner");}
+    _;
+    }
+
+    function ReceivedResolve(uint256 _purchaseID) public whoReceiveResolves(_purchaseID){
+        Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.ACTIVE_APPEAL_REQUEST, "You can only resolve a newly appealed purchase");
+        Client storage client = clients[purchase.clientID];
+        Store storage store = stores[purchase.storeID];
+        require(client.clientAddress == msg.sender, "You cant resolve a purchase that was not made by you");
+        purchase.lastUpdatedTimestamp=block.timestamp;
+        purchase.state = PurchaseState.FINALIZED_RECEIVED;
+        _internalTransferFunds(purchase.clientInsurance, client.clientAddress);
+        _internalTransferFunds((purchase.transactionPrice+purchase.clientInsurance), store.owner);
+        emit PurchaseReceived(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
         
     }
-
-    function storeCancelsEscrowPurchase(uint256 _purchaseID) public { //va de confirmed a canceled
+    modifier whoCancelResolves(uint256 _purchaseID){
+    Purchase storage purchase = purchases[_purchaseID];
+    Client storage client = clients[purchase.clientID];
+    require(purchase.flow == Flows.MODERATED_ESCROW || purchase.flow == Flows.AUTOMATIC_ESCROW, "You can only appeal a purchase that was made with escrow");
+    if(purchase.flow==Flows.MODERATED_ESCROW){
+        require(moderatorIndexes[msg.sender] >= 0, "You can only CancelResolve a moderated purchase that was made in a moderated escrow if you are   the Moderatorr");
+    }
+    else{require(msg.sender == stores[purchase.storeID].owner, "You can only CancelReslve in an automatic purchase if you are the store owner");}
+    _;
+    }
+    function calceledResolve(uint256 _purchaseID)  public whoCancelResolves(_purchaseID){
+        Purchase storage purchase = purchases[_purchaseID];
+        require(purchase.state == PurchaseState.ACTIVE_APPEAL_REQUEST, "You can only resolve a newly appealed purchase");
+        Store storage store = stores[purchase.storeID];
+        Client storage client = clients[purchase.clientID];
+        purchase.lastUpdatedTimestamp=block.timestamp;
+        purchase.state = PurchaseState.FINALIZED_CANCELED;
+        _internalTransferFunds(purchase.clientInsurance, store.owner);
+        _internalTransferFunds((purchase.transactionPrice+purchase.clientInsurance), client.clientAddress);
+        emit PurchaseCanceled(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
 
     }
-
-    function clientReceivePurchase() public { //va de confirmed a received
-        //confirma que le llega
-    }
-
+    
     // Automatic Escrow Flow
 
     //function client apeal va de confirmed a apeal request
@@ -316,13 +408,13 @@ contract WebWeaver is Ownable, Transferable {
     // Private Functions
 
     //Call reputation after confirmation
-    function _reputation(bool positive, uint8 _opinion) private {
+    function _reputation(bool positive, uint8 _opinion, address _storeOwner) private {
         require(_opinion <= 5, "The reputation score cannot be higher than 5");
         require(_opinion >= 1, "The reputation score cannot be lower than 1");
         if(positive) {
-            stores[storeIndexes[msg.sender]].reputation += _opinion;
+            stores[storeIndexes[_storeOwner]].reputation += _opinion;
         } else {
-            stores[storeIndexes[msg.sender]].reputation -= _opinion;
+            stores[storeIndexes[_storeOwner]].reputation -= _opinion;
         }
     }
 
