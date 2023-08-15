@@ -29,7 +29,7 @@ const accounts: Account[] = [storeAccount, storeAccount2, customerAccount];
 
 // This is the account used to deploy the contract to ThirdWeb
 const deployerAccount: Account = {
-  address: "0x189ff771b5802b22d79ab6cfb9ed0490b61067f6",
+  address: process.env.DEPLOYER_ADDRESS || "",
   privateKey: process.env.DEPLOYER_PRIVATE_KEY || "",
 };
 
