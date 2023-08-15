@@ -1,6 +1,6 @@
 "use client";
 
-import { useContract, useContractRead } from "@thirdweb-dev/react";
+import { useAddress, useContract, useContractRead } from "@thirdweb-dev/react";
 import Image from "next/image";
 import { useMemo } from "react";
 import { ethers } from "ethers";
@@ -9,11 +9,14 @@ import { CONTRACT_ADDRESS } from "@/lib/contract";
 import Product from "@/types/Product";
 import Products from "../Products";
 import Store from "@/types/Store";
+import StorePurchases from "./StorePurchases";
 
 const Store: React.FC<{ storeID: number }> = ({ storeID }) => {
   const { contract } = useContract(CONTRACT_ADDRESS);
+  const address = useAddress();
   const { data } = useContractRead(contract, "getCatalog", []);
   const { data: storeData } = useContractRead(contract, "stores", [storeID]);
+
   const products: Product[] = useMemo(
     () =>
       data?.filter((product: Product) => {
@@ -27,7 +30,7 @@ const Store: React.FC<{ storeID: number }> = ({ storeID }) => {
   return (
     store && (
       <div className="w-full">
-        <div className="relative h-60 w-full">
+        <div className="relative w-full h-60">
           <Image
             src={`/stores/${store.bannerPath}`}
             fill
@@ -37,7 +40,7 @@ const Store: React.FC<{ storeID: number }> = ({ storeID }) => {
               objectFit: "cover",
             }}
           />
-          <div className="absolute z-10 -bottom-10 left-10 border-3 rounded-full border-white shadow-md">
+          <div className="absolute z-10 border-white rounded-full shadow-md -bottom-10 left-10 border-3">
             <Avatar className="h-28 w-28">
               <AvatarImage src={`/stores/${store.imagePath}`} />
             </Avatar>
@@ -45,6 +48,7 @@ const Store: React.FC<{ storeID: number }> = ({ storeID }) => {
         </div>
         <div className="px-12 py-24">
           <Products data={products} showStoreSummary={false} />
+          {store.owner === address && <StorePurchases />}
         </div>
       </div>
     )
