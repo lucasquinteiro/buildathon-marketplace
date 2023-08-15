@@ -3,8 +3,7 @@ import {
   deployerAccount,
   customerAccount,
   storeAccount,
-  storeAccount2,
-  getAccounts
+  storeAccount2
 } from "./accounts";
 import { Store } from "./customTypes";
 import { product1, product2, product3 } from "./products";
@@ -12,10 +11,6 @@ import getWallet from "./wallet";
 import fs from "fs";
 const yaml = require("js-yaml");
 
-const populateMarket = async (contract: WebWeaver) => {
-  var stores: Store[] = yaml.load(fs.readFileSync('./scripts/data/stores.yaml', 'utf-8')).stores;
-  const Accounts = await getAccounts();
-}
 
 const initializeStore = async (contract: WebWeaver) => {
   const storeOwnerWallet = getWallet(storeAccount);

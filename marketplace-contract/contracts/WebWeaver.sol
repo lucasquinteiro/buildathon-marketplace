@@ -283,9 +283,9 @@ contract WebWeaver is Ownable, Transferable {
         emit PurchaseReceived(purchase.clientID, Flows.DIRECT, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
 
-    // Automatic Escrow Flow
+    // Escrow Flows
 
-    function storeConfirmAutomaticEscrowPurchase(uint256 _purchaseID) public payable {
+    function storeConfirmEscrowPurchase(uint256 _purchaseID) public payable { //acepta el purchase (va de sent a confirmed)
         Purchase storage purchase = purchases[_purchaseID];
         require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only receive a newly sent purchase");
         Store storage store = stores[purchase.storeID];
@@ -293,14 +293,25 @@ contract WebWeaver is Ownable, Transferable {
         
     }
 
-    function clientReceivePurchase() public {
-        
+    function storeCancelsEscrowPurchase(uint256 _purchaseID) public { //va de confirmed a canceled
+
     }
+
+    function clientReceivePurchase() public { //va de confirmed a received
+        //confirma que le llega
+    }
+
+    // Automatic Escrow Flow
+
+    //function client apeal va de confirmed a apeal request
+    //function store resolve cancel va de apeal a canceled
+    //function client resolve receive va de apeal a received
 
     // Moderated Escrow Flow
 
-
-
+    //function store OR client apeal va de confirmed a apeal request
+    //function moderator resolve cancel va de apeal a canceled
+    //function moderator resolve receive va de apeal a received
     
     // Private Functions
 

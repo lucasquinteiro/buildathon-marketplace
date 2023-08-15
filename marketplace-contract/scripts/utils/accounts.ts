@@ -68,16 +68,10 @@ const getAccounts = async () => {
   } else {
     deployerAccountSigner = signers[0];
   }
-  var accountsObject = new AccountsManager({
+  var accountsObject = {
     clientAccount: signers[1],
     deployerAccount: deployerAccountSigner,
-    storeAccounts: {}
-  });
-  var stores: Store[] = yaml.load(fs.readFileSync('./scripts/data/stores.yaml', 'utf-8')).stores;
-  assert(stores.length <= 10, "You cant have more than 10 stores for the test environment");
-  stores.forEach((store: Store, index: number) => {
-    accountsObject.storeAccounts[store.name] = signers[index + 2];
-  });
+  };
   return accountsObject;
 }
 
