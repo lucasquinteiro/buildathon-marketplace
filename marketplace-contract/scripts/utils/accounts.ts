@@ -1,11 +1,4 @@
 import dotenv from "dotenv";
-import { ethers } from "hardhat";
-import { setBalance } from "@nomicfoundation/hardhat-network-helpers";
-import assert from "assert";
-import fs from "fs";
-const yaml = require("js-yaml");
-
-import { Store } from "./customTypes";
 
 dotenv.config();
 
@@ -14,66 +7,11 @@ type Account = {
   privateKey: string;
 };
 
-class AccountsManager {
-  clientAccount: any;
-  deployerAccount: any;
-  storeAccounts: {
-    [key: string]: any;
-  };
-
-  constructor(
-    {
-      clientAccount,
-      deployerAccount,
-      storeAccounts
-    }
-    :
-    {
-      clientAccount: any,
-      deployerAccount: any,
-      storeAccounts: {
-        [key: string]: any;
-      }
-    }
-  ) {
-    this.clientAccount = clientAccount;
-    this.deployerAccount = deployerAccount;
-    this.storeAccounts = storeAccounts;
-  }
-
-  connectAccountsWithContract(contract: any): void {
-    for (const storeKey in this.storeAccounts) {
-      if (Object.prototype.hasOwnProperty.call(this.storeAccounts, storeKey)) {
-        contract.connect(this.storeAccounts[storeKey]);
-        console.log(`Connecting ${contract} with storeAccount ${storeKey}`);
-      }
-    }
-  }
-}
-
 // This is the account used to deploy the contract to ThirdWeb
 const deployerAccount: Account = {
   address: process.env.DEPLOYER_ADDRESS || "",
   privateKey: process.env.DEPLOYER_PRIVATE_KEY || "",
 };
-
-const getAccounts = async () => {
-  const signers = await ethers.getSigners();
-  var deployerAccountSigner;
-  if (process.env.DEPLOYER_PRIVATE_KEY != null && process.env.DEPLOYER_ADDRESS != null) {
-    deployerAccountSigner = new ethers.Wallet(process.env.DEPLOYER_PRIVATE_KEY, ethers.provider);
-    if ((await ethers.provider.getBalance(process.env.DEPLOYER_ADDRESS) < 1e19)) {
-      setBalance(process.env.DEPLOYER_ADDRESS, 1e22);
-    }
-  } else {
-    deployerAccountSigner = signers[0];
-  }
-  var accountsObject = {
-    clientAccount: signers[1],
-    deployerAccount: deployerAccountSigner,
-  };
-  return accountsObject;
-}
 
 const storeAccount = {
   address: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
@@ -102,6 +40,5 @@ export {
   storeAccount,
   storeAccount2,
   deployerAccount,
-  Account,
-  getAccounts
+  Account
 };

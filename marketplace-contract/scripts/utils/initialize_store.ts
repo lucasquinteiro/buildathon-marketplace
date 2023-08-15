@@ -5,7 +5,6 @@ import {
   storeAccount,
   storeAccount2
 } from "./accounts";
-import { Store } from "./customTypes";
 import { product1, product2, product3 } from "./products";
 import getWallet from "./wallet";
 import fs from "fs";
