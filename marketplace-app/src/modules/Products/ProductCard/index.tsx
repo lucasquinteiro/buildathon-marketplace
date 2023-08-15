@@ -33,7 +33,7 @@ const ProductCard: React.FC<Props> = ({
   ]);
 
   return (
-    <Card className="w-full md:w-60">
+    <Card className="w-full md:w-60 bg-gray-400 border-none gap-0">
       <Link href="/product">
         <div className="flex flex-col cursor-pointer hover:opacity-80">
           <div className="p-4">
@@ -52,17 +52,30 @@ const ProductCard: React.FC<Props> = ({
 
           <CardHeader>
             <CardTitle>{name}</CardTitle>
-            <CardDescription>{description}</CardDescription>
           </CardHeader>
+
           <CardContent>
-            <p>{`$${price}`}</p>
+            {showStoreSummary && storeData && <StoreSummary {...storeData} />}
           </CardContent>
         </div>
       </Link>
-      <CardFooter className="flex flex-col gap-4">
+
+      <CardFooter className="flex justify-between gap-6 p-2 bg-gray-500">
+        <div className="flex flex-col justify-start items-center">
+          <p className="text-black">Price</p> {/* Adjust styling as needed */}
+          <p className="text-white text-xl">{`${price} ETH`}</p>
+        </div>
+        <div className="flex flex-col justify-start items-center">
+          <p className="text-black"> Earn Points</p> {/* Adjust styling as needed */}
+          <p className="text-orange-500 text-xl">100</p> {/* Replace with the actual points value */}
+        </div>
+      </CardFooter>
+
+
+      {/* <CardFooter className="flex flex-col gap-4">
         {showStoreSummary && storeData && <StoreSummary {...storeData} />}
         <BuyButton onBuy={handleBuyProduct} />
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 };

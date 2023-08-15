@@ -4,6 +4,7 @@ import { useContractRead, useContract } from "@thirdweb-dev/react";
 import { useEffect } from "react";
 import { CONTRACT_ADDRESS } from "@/lib/contract";
 import Products from "@/modules/Products";
+import Stores from "@/modules/Stores";
 
 export default function Home() {
   const { contract } = useContract(CONTRACT_ADDRESS);
@@ -16,6 +17,7 @@ export default function Home() {
   return (
     <main className="flex flex-col items-center justify-between px-12 md:px-24 py-12">
       <Products data={data || []} />
+      <Stores />
     </main>
   );
 }
