@@ -34,17 +34,22 @@ describe("WeaverMarket", function () {
     it("Test populate market", async function () {
       const contract = await getMarketContract();
       const stores: Store[] = await populateMarket(contract);
-      stores.forEach(async (store: Store, index: number) => {
-        let contractStore = await contract.stores(index);
+      for (const [index, store] of stores.entries()) {
+        let contractStore = await contract.stores(index + 1);  // skip over default shop
         expect(store.logo).to.be.equal(contractStore[1]);
         expect(store.banner).to.be.equal(contractStore[2]);
         expect(store.name).to.be.equal(contractStore[3]);
-        expect(store.owner).to.be.equal(contractStore[4]);
-        let catalog;
-        store.products.forEach(async (product: Product, index: number) => {
-
-        })
-      });
+        expect(store.owner.address).to.be.equal(contractStore[4]);
+        let catalog = await contract.getStoreCatalog(store.owner.address);
+        for (const [index, product] of store.products.entries()) {
+          expect(product.name).to.be.equal(catalog[index][1]);
+          expect(product.imagePath).to.be.equal(catalog[index][2]);
+          expect(product.description).to.be.equal(catalog[index][3]);
+          expect(contractStore[0]).to.be.equal(catalog[index][5]);
+          expect(product.price).to.be.equal(catalog[index][6]);
+          expect(product.stock).to.be.equal(catalog[index][7]);
+        }
+      }
     });
   });
 

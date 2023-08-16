@@ -137,7 +137,13 @@ contract WebWeaver is Ownable, Transferable {
         return stores;
     }
 
-    function getsstorecatalog
+    function getStoreCatalog(address storeOwner) public view returns (Product[] memory) {
+        Product[] memory storeCatalog = new Product[](mappedCatalogs[storeOwner].length);
+        for (uint128 i = 0; i < mappedCatalogs[storeOwner].length; i++) {
+            storeCatalog[i] = catalog[mappedCatalogs[storeOwner][i]];
+        }
+        return storeCatalog;
+    }
 
     function getClientPurchases(address clientAddress) public view returns (Purchase[] memory) {  // TODO limit output size
         uint256[] storage clientPurchasesIndexes = mappedClientPurchases[clientIndexes[clientAddress]];
@@ -167,7 +173,7 @@ contract WebWeaver is Ownable, Transferable {
         return storeID;
     }
 
-    function addModerator(address _moderator) public onlyOwner {
+    /*function addModerator(address _moderator) public onlyOwner {
         moderatorIndexes[_moderator] += 1;  // TODO check mod isnt already present
         moderators.push(Moderator({
             moderatorAddress: _moderator
@@ -184,7 +190,7 @@ contract WebWeaver is Ownable, Transferable {
         storeIndexes[newAddress] = storeIndexes[oldAddress];
         delete storeIndexes[oldAddress];
         stores[storeIndexes[newAddress]].owner = newAddress;
-    }
+    }*/
 
     function registerProduct(uint256 _price, string calldata _name, string calldata _imagePath, string calldata _description, uint32 _stock, Flows[] memory _supportedFlows) public {
         require(storeIndexes[msg.sender] != 0, "This address does not have a store to its name");  // TODO also receive hash to check its not present
