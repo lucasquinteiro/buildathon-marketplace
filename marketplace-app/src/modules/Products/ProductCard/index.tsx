@@ -16,16 +16,22 @@ import Link from "next/link";
 import useProduct from "../useProduct";
 import { CONTRACT_ADDRESS } from "@/lib/contract";
 import { useContract, useContractRead } from "@thirdweb-dev/react";
+import { cardColors, getRandomItem } from "@/lib/utils";
+import { useMemo } from "react";
+import classnames from "classnames";
+import IconButton from "@/components/IconButton";
 
 interface Props extends Product {
   showStoreSummary?: boolean;
+  index: number;
 }
 
 const ProductCard: React.FC<Props> = ({
   showStoreSummary = true,
+  index,
   ...product
 }) => {
-  const { name, description, price } = product;
+  const { name, price } = product;
   const { handleBuyProduct } = useProduct(product);
   const { contract } = useContract(CONTRACT_ADDRESS);
   const { data: storeData } = useContractRead(contract, "stores", [
@@ -33,11 +39,21 @@ const ProductCard: React.FC<Props> = ({
   ]);
 
   return (
-    <Card className="w-full gap-0 bg-gray-400 border-none md:w-60">
+    <Card className="relative w-full md:w-[300px] overflow-hidden border-none">
+      <div className="absolute z-10 top-2 right-2">
+        <BuyButton />
+      </div>
       <Link href="/product">
         <div className="flex flex-col cursor-pointer hover:opacity-80">
-          <div className="p-4">
-            <div className="relative w-full h-40">
+          <div
+            className={classnames(`relative w-full h-[300px]`, {
+              "bg-orange": index === 0,
+              "bg-green": index === 1,
+              "bg-blue": index === 2,
+              "bg-red": index === 3,
+            })}
+          >
+            <div className={`relative w-full h-[300px]`}>
               <Image
                 src={`/products/${product.imagePath}`}
                 fill
@@ -50,33 +66,30 @@ const ProductCard: React.FC<Props> = ({
             </div>
           </div>
 
-          <CardHeader>
+          <CardContent className="flex flex-col gap-4">
             <CardTitle>{name}</CardTitle>
-          </CardHeader>
-
-          <CardContent>
             {showStoreSummary && storeData && <StoreSummary {...storeData} />}
           </CardContent>
+          <CardFooter className="flex justify-between w-full gap-6">
+            <div className="flex flex-col items-start justify-start gap-2">
+              <p className="text-xs text-muted">Precio</p>
+              <div className="flex items-end gap-2">
+                <p className="text-white">{`${price} ETH`}</p>
+                <p className="text-xs text-green"> -15%</p>
+              </div>
+            </div>
+            <div className="flex flex-col items-end justify-start gap-2">
+              <p className="text-xs text-muted">Acumula Puntos</p>
+              <p className="text-xl text-right text-yellow">100 pts</p>
+            </div>
+          </CardFooter>
         </div>
       </Link>
 
-      <CardFooter className="flex justify-between gap-6 p-2 bg-gray-500">
-        <div className="flex flex-col items-center justify-start">
-          <p className="text-black">Price</p> {/* Adjust styling as needed */}
-          <p className="text-xl text-white">{`${price} ETH`}</p>
-        </div>
-        <div className="flex flex-col items-center justify-start">
-          <p className="text-black"> Earn Points</p>{" "}
-          {/* Adjust styling as needed */}
-          <p className="text-xl text-orange-500">100</p>{" "}
-          {/* Replace with the actual points value */}
-        </div>
-      </CardFooter>
-
-      <CardFooter className="flex flex-col gap-4">
+      {/* <CardFooter className="flex flex-col gap-4">
         {showStoreSummary && storeData && <StoreSummary {...storeData} />}
         <BuyButton onBuy={handleBuyProduct} />
-      </CardFooter>
+      </CardFooter> */}
     </Card>
   );
 };

@@ -6,11 +6,10 @@ import { useContract, useContractWrite } from "@thirdweb-dev/react";
 
 const useProduct = (product: Product) => {
   const { contract } = useContract(CONTRACT_ADDRESS);
-  const {
-    mutateAsync: purchaseProduct,
-    isLoading,
-    error,
-  } = useContractWrite(contract, "purchaseProduct");
+  const { mutateAsync: purchaseProduct } = useContractWrite(
+    contract,
+    "purchaseProduct"
+  );
 
   const handleBuyProduct = async () => {
     try {
