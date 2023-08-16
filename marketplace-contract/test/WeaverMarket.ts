@@ -34,6 +34,7 @@ describe("WeaverMarket", function () {
     it("Test populate market", async function () {
       const contract = await getMarketContract();
       const stores: Store[] = await populateMarket(contract);
+      expect(stores.length).to.be.greaterThan(0);
       for (const [index, store] of stores.entries()) {
         let contractStore = await contract.stores(index + 1);  // skip over default shop
         expect(store.logo).to.be.equal(contractStore[1]);
@@ -41,6 +42,7 @@ describe("WeaverMarket", function () {
         expect(store.name).to.be.equal(contractStore[3]);
         expect(store.owner.address).to.be.equal(contractStore[4]);
         let catalog = await contract.getStoreCatalog(store.owner.address);
+        expect(catalog.length).to.be.equal(store.products.length);
         for (const [index, product] of store.products.entries()) {
           expect(product.name).to.be.equal(catalog[index][1]);
           expect(product.imagePath).to.be.equal(catalog[index][2]);
@@ -53,42 +55,13 @@ describe("WeaverMarket", function () {
     });
   });
 
-  /*describe("Withdrawals", function () {
-    describe("Validations", function () {
-      it("Should revert with the right error if called too soon", async function () {
-        const { lock } = await loadFixture(deployOneYearLockFixture);
-
-        await expect(lock.withdraw()).to.be.revertedWith(
-          "You can't withdraw yet"
-        );
-      });
-
-      it("Should revert with the right error if called from another account", async function () {
-        const { lock, unlockTime, otherAccount } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        // We can increase the time in Hardhat Network
-        await time.increaseTo(unlockTime);
-
-        // We use lock.connect() to send a transaction from another account
-        await expect(lock.connect(otherAccount).withdraw()).to.be.revertedWith(
-          "You aren't the owner"
-        );
-      });
-
-      it("Shouldn't fail if the unlockTime has arrived and the owner calls it", async function () {
-        const { lock, unlockTime } = await loadFixture(
-          deployOneYearLockFixture
-        );
-
-        // Transactions are sent using the first signer by default
-        await time.increaseTo(unlockTime);
-
-        await expect(lock.withdraw()).not.to.be.reverted;
+  describe("Purchases", function () {
+    describe("Direct Flow", function () {
+      it("Purchase product", async function () {
+        const accounts = await getAccounts();
       });
     });
-
+/*
     describe("Events", function () {
       it("Should emit an event on withdrawals", async function () {
         const { lock, unlockTime, lockedAmount } = await loadFixture(
