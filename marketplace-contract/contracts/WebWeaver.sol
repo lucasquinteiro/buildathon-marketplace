@@ -84,7 +84,7 @@ contract WebWeaver is Ownable, Transferable {
     mapping(address => uint16) public moderatorIndexes;
 
     Store[] public stores;
-    mapping(address => uint64) storeIndexes;  // stores[storeIndexes[storeOwnerAddress]] TODO revisar forma de addressear un store desde el front, para hacer un get
+    mapping(address => uint64) public storeIndexes;  // stores[storeIndexes[storeOwnerAddress]] TODO revisar forma de addressear un store desde el front, para hacer un get
 
     Client[] public clients;
     mapping(address => uint64) public clientIndexes;
@@ -132,6 +132,12 @@ contract WebWeaver is Ownable, Transferable {
     function getCatalog() public view returns (Product[] memory) {  // TODO limit output size
         return catalog;
     }
+
+    function getStores() public view returns (Store[] memory) {
+        return stores;
+    }
+
+    function getsstorecatalog
 
     function getClientPurchases(address clientAddress) public view returns (Purchase[] memory) {  // TODO limit output size
         uint256[] storage clientPurchasesIndexes = mappedClientPurchases[clientIndexes[clientAddress]];
@@ -289,7 +295,7 @@ contract WebWeaver is Ownable, Transferable {
     }
 
     // Escrow Flows
-
+    /*
     function storeConfirmEscrowPurchase(uint256 _purchaseID) public payable { //acepta el purchase (va de sent a confirmed)
         Purchase storage purchase = purchases[_purchaseID];
         require(purchase.state == PurchaseState.ACTIVE_SENT, "You can only send a newly sent purchase");
@@ -393,7 +399,7 @@ contract WebWeaver is Ownable, Transferable {
         _internalTransferFunds((purchase.price + purchase.clientInsurance), client.clientAddress);
         emit PurchaseCanceled(purchase.clientID, Flows.AUTOMATIC_ESCROW, purchase.storeID, purchase.productID, purchase.purchaseID);
     }
-    
+    */
     // Automatic Escrow Flow
 
     //function client apeal va de confirmed a apeal request

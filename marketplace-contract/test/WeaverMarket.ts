@@ -1,24 +1,54 @@
-import {
-  time,
-  loadFixture,
-} from "@nomicfoundation/hardhat-toolbox/network-helpers";
-import { anyValue } from "@nomicfoundation/hardhat-chai-matchers/withArgs";
+import dotenv from "dotenv";
 import { expect } from "chai";
 import { ethers } from "hardhat";
 
+import { deployMarket } from "../scripts/deploy_market";
+import { populateMarket } from "../scripts/populate_market";
+import { WebWeaver } from "../typechain-types";
+import { getAccounts } from "../scripts/utils/accountsManager";
+import { Store } from "../scripts/entities/store";
+import Product from "../scripts/entities/product";
+
+
 describe("WeaverMarket", function () {
+  async function getMarketContract(): Promise<WebWeaver> {
+    if (process.env.CONTRACT_ADDRESS == null || process.env.CONTRACT_ADDRESS.length == 0) {
+      return await deployMarket();
+    } else {
+      return await ethers.getContractAt("WebWeaver", process.env.CONTRACT_ADDRESS);
+    }
+  }
+
+  before(async () => {
+    dotenv.config();
+  });
+
   describe("Deployment", function () {
-    it("Should fail if the unlockTime is not in the future", async function () {
-      // We don't use the fixture here because we want a different deployment
-      const latestTime = await time.latest();
-      const Lock = await ethers.getContractFactory("Lock");
-      await expect(Lock.deploy(latestTime, { value: 1 })).to.be.revertedWith(
-        "Unlock time should be in the future"
-      );
+    it("Test basic deployment", async function () {
+      const accounts = await getAccounts();
+      const contract = await getMarketContract();
+      expect(await contract.owner()).to.be.equal(accounts.deployerAccount.address);
+      expect(await contract.getAddress()).to.be.equal(process.env.CONTRACT_ADDRESS);
+    });
+
+    it("Test populate market", async function () {
+      const contract = await getMarketContract();
+      const stores: Store[] = await populateMarket(contract);
+      stores.forEach(async (store: Store, index: number) => {
+        let contractStore = await contract.stores(index);
+        expect(store.logo).to.be.equal(contractStore[1]);
+        expect(store.banner).to.be.equal(contractStore[2]);
+        expect(store.name).to.be.equal(contractStore[3]);
+        expect(store.owner).to.be.equal(contractStore[4]);
+        let catalog;
+        store.products.forEach(async (product: Product, index: number) => {
+
+        })
+      });
     });
   });
 
-  describe("Withdrawals", function () {
+  /*describe("Withdrawals", function () {
     describe("Validations", function () {
       it("Should revert with the right error if called too soon", async function () {
         const { lock } = await loadFixture(deployOneYearLockFixture);
@@ -82,5 +112,5 @@ describe("WeaverMarket", function () {
         );
       });
     });
-  });
+  });*/
 });

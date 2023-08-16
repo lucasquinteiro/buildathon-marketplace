@@ -1,6 +1,7 @@
 import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
 import { WebWeaver } from "../../typechain-types";
 import Product from "./product";
+import { getAccounts } from "../utils/accountsManager";
 
 type StoreData =  {
     name: string;
@@ -15,7 +16,8 @@ class Store {
     banner: string;
     products: Product[];
     owner: HardhatEthersSigner;
-    contractReference: any;
+    contractReference: WebWeaver;
+    registered: boolean;
   
     constructor({
         owner,
@@ -23,37 +25,41 @@ class Store {
         logo,
         banner,
         products,
+        contract
     }: {
         owner: HardhatEthersSigner;
         name: string;
         logo: string;
         banner: string;
         products: Product[];
-    }, contract?: WebWeaver) {
+        contract: WebWeaver;
+    }) {
         this.owner = owner;
         this.name = name;
         this.logo = logo;
         this.banner = banner;
         this.products = products;
-        if (contract != null) {
-            this._registerStore(contract);
-            this._registerProducts(contract);
-        }
+        this.contractReference = contract;
+        this.registered = false;
     }
 
-    private _registerStore(contract: WebWeaver): void {
-        contract.registerStore(
+    async registerStore(): Promise<void> {
+        if (this.registered) {
+            return;
+        }
+        await this.contractReference.registerStore(
             this.owner,
             this.name,
             this.logo,
             this.banner
         );
+        this.contractReference = this.contractReference.connect(this.owner);
+        await this._registerProducts();
     }
 
-    private _registerProducts(contract: WebWeaver): void {
-        contract = contract.connect(this.owner);
+    private async _registerProducts(): Promise<void> {
         this.products.forEach((product: Product) => {
-            contract.registerProduct(
+            this.contractReference.registerProduct(
                 product.price,
                 product.name,
                 product.imagePath,

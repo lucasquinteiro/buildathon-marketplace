@@ -23,15 +23,17 @@ const populateMarket = async (contract: WebWeaver) => {
     var stores: Store[] = [];
     var storesData: StoreData[] = yaml.load(fs.readFileSync('./scripts/data/stores.yaml', 'utf-8')).stores;
     assert(storesData.length <= 10, "You cant have more than 10 stores for the test environment");
-    storesData.forEach(async (storeData: StoreData, index: number) => {
+    for (var index = 0; index < 2; index++) {
         stores.push(new Store({
-            owner: signers[index + 2],  // First 2 are reserved for deployer and customer
-            name: storeData.name,
-            logo: storeData.logo,
-            banner: storeData.banner,
-            products: storeData.products
+            owner: accounts.extraAccounts[index],  // First 2 are reserved for deployer and customer
+            name: storesData[index].name,
+            logo: storesData[index].logo,
+            banner: storesData[index].banner,
+            products: storesData[index].products,
+            contract: contract
         }));
-    });
+        await stores[index].registerStore();
+    }
     return stores;
 };
 

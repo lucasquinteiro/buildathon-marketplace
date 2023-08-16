@@ -7,18 +7,19 @@ const deployMarket = async (): Promise<WebWeaver> => {
     const MyContract = await ethers.getContractFactory("WebWeaver");
 
     const myContract = await MyContract.connect(accounts.deployerAccount).deploy();
-    console.log(`Deployer WebWeaver contract at: ${myContract.getAddress()}`);
+    //console.log(`Deployed WebWeaver contract at: ${await myContract.getAddress()}`);
+    process.env.CONTRACT_ADDRESS = await myContract.getAddress();
 
     return myContract;
 };
-
-deployMarket().then(() => {
-    console.log("Executed populate_market.ts script");
-    process.exitCode = 0;
-}).catch((error) => {
-    console.error(error);
-    process.exitCode = 1;
-});
-
+if (process.argv[1].endsWith("deploy_market.ts")) {
+    deployMarket().then(() => {
+        console.log("Executed deploy_market.ts script");
+        process.exitCode = 0;
+    }).catch((error) => {
+        console.error(error);
+        process.exitCode = 1;
+    });
+}
 
 export { deployMarket };
