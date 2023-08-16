@@ -15,15 +15,15 @@ async function main() {
   const DIRECT_FLOW = 0;
 
   // uint128 _productID, bytes32 _productHash, uint64 _storeID, Flows _purchaseFlow
-  // const response = await contractWithCustomer.purchaseProduct(
-  //   product.productID,
-  //   product.productHash,
-  //   product.storeID,
-  //   DIRECT_FLOW,
-  //   {
-  //     value: product.price,
-  //   }
-  // );
+  const response = await contractWithCustomer.purchaseProduct(
+    product.productID,
+    product.productHash,
+    product.storeID,
+    DIRECT_FLOW,
+    {
+      value: product.price,
+    }
+  );
 
   const purchases = await contractWithCustomer.getClientPurchases(
     customerAccount.address

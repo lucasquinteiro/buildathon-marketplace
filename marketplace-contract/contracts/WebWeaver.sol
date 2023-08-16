@@ -142,7 +142,14 @@ contract WebWeaver is Ownable, Transferable {
         return clientPurchases;
     }
 
-    // Public Interaction Functions
+    function getStorePurchases(address storeAddress) public view returns (Purchase[] memory) {  // TODO limit output size
+        uint256[] storage storePurchasesIndexes = mappedStorePurchases[storeIndexes[storeAddress]];
+        Purchase[] memory storePurchases = new Purchase[](storePurchasesIndexes.length);
+        for (uint i = 0; i < storePurchasesIndexes.length; i++) {
+            storePurchases[i] = purchases[storePurchasesIndexes[i]];
+        }
+        return storePurchases;
+    }
 
     function registerStore(address storeOwner, string calldata _storeName, string calldata _imagePath, string calldata _bannerPath) public onlyOwner returns (uint64 storeID) {
         require(storeIndexes[storeOwner] == 0, "This address already has a store to its name");
